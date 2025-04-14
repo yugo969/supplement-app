@@ -33,3 +33,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase (ローカル環境やデプロイ設定)
+.firebaserc
+firebase.json
+firestore.indexes.json
+storage.rules
+
+# Firebase Functions
+functions/node_modules/
+functions/lib/
+functions/.env

@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-    background-color: #444;
-}
-
 label {
     font-size: 12px;
     line-height: 1;
