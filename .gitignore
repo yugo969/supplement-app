@@ -44,3 +44,10 @@ storage.rules
 functions/node_modules/
 functions/lib/
 functions/.env
+
+# Repomix output file
+repomix-output.xml
+
+# clinerules
+.clinerules
+memory_bank
