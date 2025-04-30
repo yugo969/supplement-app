@@ -1,7 +1,7 @@
 import Image from "next/image";
 import firebase from "@/lib/firebaseClient";
 import { useAuth } from "@/hooks/useAuth";
-import { useForm } from "react-hook-form";
+import { useForm as useHookForm } from "react-hook-form";
 import {
   addSupplement,
   deleteSupplement,
@@ -21,6 +21,29 @@ import {
 } from "react-icons/md";
 import resizeImage from "@/lib/resizeImage";
 import { useNotification } from "@/lib/useNotification";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
 
 type FormData = {
   supplement_name: string;
@@ -49,12 +72,13 @@ const maxWidth = 552;
 const maxHeight = 366;
 
 export default function Home() {
+  const methods = useHookForm<FormData>();
   const {
     register,
     handleSubmit,
     formState: { errors },
     setValue,
-  } = useForm<FormData>();
+  } = methods;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [supplements, setSupplements] = useState<any[]>([]);
   const [selectedSupplement, setSelectedSupplement] = useState<null | any>(
@@ -246,77 +270,71 @@ export default function Home() {
         isModalOpen && "overflow-hidden"
       }`}
     >
-      <button
-        className={`fixed flex flex-col justify-center items-center w-24 h-24 bottom-6 right-4 z-10 md:hidden ${
-          isModalOpen && "hidden"
-        } text-[10px] shadow-lg shadow-slate-500 p-2 text-orange-950 font-semibold rounded-full bg-white/70`}
-        onClick={() => setIsModalOpen(true)}
-      >
-        <MdOutlineAddBox size={64} />
-        <span>サプリ追加</span>
-      </button>
-      <div className="relative flex flex-col w-screen h-full md:p-10 p-4 gap-6">
-        <div className="flex md:sticky md:top-2 bg-white/80 z-10 justify-between items-center rounded-md shadow-md shadow-slate-400 md:p-6 p-3">
-          <h2 className="flex items-center sm:gap-2 text-gray-600 md:text-xl text-lg">
-            <MdOutlineMedication size={40} />
-            <span className="font-bold leading-6">サプリ KEEPER</span>
-          </h2>
-          <div className="flex gap-3">
-            <button
-              className="flex justify-between items-center gap-2 py-2 md:px-4 px-3 text-orange-400 font-semibold rounded-md border border-orange-400 bg-white md:flex max-md:hidden hover:opacity-60 duration-100 shadow-sm hover:shadow-none shadow-black"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <span>サプリ追加</span>
-              <MdOutlineAddBox size={24} />
-            </button>
-            <button
-              className="py-1 md:px-4 px-3 text-sm text-gray-500 rounded-md border border-gray-400 hover:opacity-60 duration-100 break-keep"
-              onClick={handleLogout}
-            >
-              ログアウト
-            </button>
+      <div className="relative">
+        <Button
+          className="fixed bottom-6 right-4 z-10 md:hidden rounded-full bg-orange-400 hover:bg-orange-500 p-0 w-16 h-16 shadow-lg shadow-slate-500"
+          onClick={() => setIsModalOpen(true)}
+          size="icon"
+        >
+          <MdOutlineAddBox size={32} />
+        </Button>
+        <div className="relative flex flex-col w-screen h-full md:p-10 p-4 gap-6">
+          <div className="flex md:sticky md:top-2 bg-white/80 z-10 justify-between items-center rounded-md shadow-md shadow-slate-400 md:p-6 p-3">
+            <h2 className="flex items-center sm:gap-2 text-gray-600 md:text-xl text-lg">
+              <MdOutlineMedication size={40} />
+              <span className="font-bold leading-6">サプリ KEEPER</span>
+            </h2>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="text-orange-400 border-orange-400 font-semibold hover:bg-orange-100 shadow-sm max-md:hidden"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <span>サプリ追加</span>
+                <MdOutlineAddBox size={24} />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-gray-500 border-gray-400 hover:bg-gray-100"
+                onClick={handleLogout}
+              >
+                ログアウト
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* <div className="flex flex-col"> */}
-        <div className="grid md:grid-cols-[repeat(auto-fill,356px)] grid-cols-1 justify-center gap-6">
-          {/* <div className="flex flex-wrap gap-6"> */}
-          {supplements.map((supplement) => (
-            <div
-              key={supplement.id}
-              className="flex flex-col justify-between gap-3 w-full pb-2 rounded-lg border-2 border-white bg-zinc-50 shadow-slate-300 shadow-md"
-            >
-              <div className="flex flex-col gap-3">
-                <div>
-                  {/* 画像を表示 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 justify-items-center">
+            {supplements.map((supplement) => (
+              <Card
+                key={supplement.id}
+                className="w-full max-w-[356px] overflow-hidden border-2 border-white bg-zinc-50 shadow-slate-300"
+              >
+                <div className="relative w-full h-auto aspect-[3/2]">
                   {supplement.imageUrl ? (
-                    <div className="relative w-full h-auto aspect-[3/2]">
-                      <Image
-                        src={supplement.imageUrl}
-                        alt={supplement.supplement_name}
-                        fill
-                        className="inset-0 w-full h-full rounded-t"
-                        style={{
-                          // objectFit: 'contain',
-                          objectFit: "cover",
-                        }}
-                      />
-                    </div>
+                    <Image
+                      src={supplement.imageUrl}
+                      alt={supplement.supplement_name}
+                      fill
+                      className="object-cover"
+                    />
                   ) : (
-                    <p className="flex justify-center items-center w-full text-black/50 text-[24px] aspect-[3/2] bg-gray-400">
+                    <div className="flex justify-center items-center w-full h-full text-black/50 text-[24px] bg-gray-400">
                       no-image
-                    </p>
+                    </div>
                   )}
+                </div>
 
+                <CardHeader className="p-0">
                   <div className="text-center break-all">
                     <h3 className="py-1 px-4 bg-gray-700 text-bold text-16px text-white rounded-b-[40px]">
                       {supplement.supplement_name}
                     </h3>
                   </div>
-                </div>
+                </CardHeader>
 
-                <div className="flex flex-col gap-4 py-3 px-4">
-                  <div className="flex flex-row gap-5">
+                <CardContent className="flex flex-col gap-4 py-3 px-4">
+                  <div className="flex flex-row flex-wrap gap-5">
                     <div className="">
                       <div className="flex border-b-2">
                         <span className="text-[12px] border-gray-300 flex">
@@ -348,232 +366,256 @@ export default function Home() {
                     <span className="flex-col-reverse text-xs border-gray-300 flex grow">
                       服用タイミング
                     </span>
-                    <p className="p-2 flex gap-2 md:text-xs text-base text-black-950 font-regular">
+                    <div className="p-2 flex flex-wrap gap-2 md:text-xs text-base text-black-950 font-regular">
                       {supplement.timing_morning && (
-                        <button
+                        <Button
                           onClick={() =>
                             handleTakeDose(supplement.id, "morning")
                           }
-                          className={`shadow-md hover:shadow-inner hover:opacity-60 rounded-full flex py-1 px-4
-                                ${
-                                  supplement.takenTimings?.morning
-                                    ? "from-cyan-400 to-orange-400 bg-gradient-to-tr"
-                                    : "border border-orange-400"
-                                }
-                              `}
+                          variant="outline"
+                          size="sm"
+                          className={`rounded-full ${
+                            supplement.takenTimings?.morning
+                              ? "bg-gradient-to-tr from-cyan-400 to-orange-400 text-white border-0"
+                              : "border-orange-400 text-orange-600"
+                          }`}
                         >
                           朝 {supplement.takenTimings?.morning ? "✔" : ""}
-                        </button>
+                        </Button>
                       )}
 
                       {supplement.timing_noon && (
-                        <button
+                        <Button
                           onClick={() => handleTakeDose(supplement.id, "noon")}
-                          className={`shadow-md hover:shadow-inner hover:opacity-60 rounded-full flex py-1 px-4
-                                ${
-                                  supplement.takenTimings?.noon
-                                    ? "bg-orange-400"
-                                    : "border border-orange-400"
-                                }
-                              `}
+                          variant="outline"
+                          size="sm"
+                          className={`rounded-full ${
+                            supplement.takenTimings?.noon
+                              ? "bg-orange-400 text-white border-0"
+                              : "border-orange-400 text-orange-600"
+                          }`}
                         >
                           昼 {supplement.takenTimings?.noon ? "✔" : ""}
-                        </button>
+                        </Button>
                       )}
                       {supplement.timing_night && (
-                        <button
+                        <Button
                           onClick={() => handleTakeDose(supplement.id, "night")}
-                          className={`shadow-md hover:shadow-inner hover:opacity-60 rounded-full flex py-1 px-4
-                                ${
-                                  supplement.takenTimings?.night
-                                    ? "from-cyan-400 to-orange-400 bg-gradient-to-bl"
-                                    : "border border-orange-400"
-                                }
-                              `}
+                          variant="outline"
+                          size="sm"
+                          className={`rounded-full ${
+                            supplement.takenTimings?.night
+                              ? "bg-gradient-to-bl from-cyan-400 to-orange-400 text-white border-0"
+                              : "border-orange-400 text-orange-600"
+                          }`}
                         >
                           夜 {supplement.takenTimings?.night ? "✔" : ""}
-                        </button>
+                        </Button>
                       )}
-                    </p>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
 
-              <div className="text-sm flex gap-3 self-end px-2">
-                <button
-                  className=" py-1 px-5 rounded-sm border border-gray-500"
-                  onClick={() => handleOpenUpdateModal(supplement)}
-                >
-                  編集
-                </button>
-                <button
-                  className="py-2 px-3 border-b border-gray-500"
-                  onClick={() => handleDeleteSupplement(supplement.id)}
-                >
-                  削除
-                </button>
-              </div>
-            </div>
-          ))}
-          {/* </div> */}
+                <CardFooter className="justify-end p-2 gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-500 text-gray-700"
+                    onClick={() => handleOpenUpdateModal(supplement)}
+                  >
+                    編集
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="border-b border-gray-500 text-gray-700 rounded-none px-3"
+                    onClick={() => handleDeleteSupplement(supplement.id)}
+                  >
+                    削除
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
       {isModalOpen && (
-        <div
-          className="modal overscroll-none overflow-auto bg-black/80 w-screen h-full fixed top-0 bottom-0 left-0 right-0 flex justify-center items-center z-10"
-          onClick={() => {
-            setIsModalOpen(false);
-            setSelectedSupplement(null);
+        <Dialog
+          open={isModalOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setIsModalOpen(false);
+              setSelectedSupplement(null);
+            }
           }}
         >
-          <form
-            className="relative flex flex-col md:w-fit w-[calc(100vw-32px)] h-fit gap-4 md:gap-6 md:py-8 md:px-20 pt-3 p-4 md:p-6 bg-zinc-500 rounded-lg"
-            onSubmit={(e) => {
-              e.preventDefault(); // ページのリロードを防ぐ
-              handleSubmit(handleAddOrUpdateSupplement)(e);
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="group relative w-full aspect-[3/2] rounded-md bg-gray-200">
-              {!uploadedImage ? (
-                <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer">
-                  <MdAddAPhoto size={64} />
-                  <span className="text-[16px]">画像追加</span>
-                  <input
-                    type="file"
-                    {...register("image")}
-                    onChange={handleImageChange}
-                    className="opacity-0 absolute inset-0 w-full h-full"
-                  />
-                </label>
-              ) : (
-                <div className="relative w-full h-full">
-                  <Image
-                    src={uploadedImage}
-                    alt="Uploaded"
-                    fill
-                    className="absolute inset-0 w-full h-full"
-                    style={{
-                      objectFit: "cover",
-                    }}
-                  />
-                  <div className="absolute right-1 bottom-1 w-14 h-14 rounded-full transition duration-300 group-hover:opacity-100 bg-black/70 border-white">
-                    <button
-                      className="flex flex-col justify-center items-center gap-0.5 opacity-100 transition duration-300 group-hover:opacity-100 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-[22px] w-10 h-10 rounded"
-                      onClick={handleImageDelete}
-                    >
-                      <MdDeleteForever size={60} />
-                      <span className="text-[12px]">削除</span>
-                    </button>
-                  </div>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto sm:max-w-lg md:max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-gray-800">
+                {selectedSupplement ? "サプリ編集" : "サプリ追加"}
+              </DialogTitle>
+            </DialogHeader>
+
+            <Form {...methods}>
+              <form
+                className="space-y-6"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSubmit(handleAddOrUpdateSupplement)(e);
+                }}
+              >
+                <div className="group relative w-full aspect-[3/2] rounded-md bg-gray-200">
+                  {!uploadedImage ? (
+                    <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer">
+                      <MdAddAPhoto size={64} />
+                      <span className="text-[16px]">画像追加</span>
+                      <input
+                        type="file"
+                        {...register("image")}
+                        onChange={handleImageChange}
+                        className="opacity-0 absolute inset-0 w-full h-full"
+                      />
+                    </label>
+                  ) : (
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={uploadedImage}
+                        alt="Uploaded"
+                        fill
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                      <div className="absolute right-1 bottom-1 w-14 h-14 rounded-full transition duration-300 group-hover:opacity-100 bg-black/70 border-white">
+                        <button
+                          className="flex flex-col justify-center items-center gap-0.5 opacity-100 transition duration-300 group-hover:opacity-100 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-[22px] w-10 h-10 rounded"
+                          onClick={handleImageDelete}
+                          type="button"
+                        >
+                          <MdDeleteForever size={60} />
+                          <span className="text-[12px]">削除</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            <div className="flex flex-col">
-              <label htmlFor="supplement-name">サプリ名</label>
-              <input
-                type="text"
-                id="supplement-name"
-                {...register("supplement_name", { required: true })}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="dosage">内容量</label>
-              <div className="flex">
-                <input
-                  className="w-full rounded-r-none border-gray-400"
-                  style={{ borderRight: "1px inset" }}
-                  type="number"
-                  id="dosage"
-                  {...register("dosage")}
+                <FormField
+                  name="supplement_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>サプリ名</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...register("supplement_name", { required: true })}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
                 />
-                <select
-                  className="rounded-l-none rounded-r-md"
-                  defaultValue={""}
-                  {...register("dosage_unit")}
-                >
-                  <option value="" disabled>
-                    単位
-                  </option>
-                  <option value="錠" selected>
-                    錠
-                  </option>
-                  <option value="g">g</option>
-                  <option value="ml">ml</option>
-                </select>
-              </div>
-            </div>
 
-            <div>
-              <label htmlFor="intake-amount">一回の服用量</label>
-              <div className="flex">
-                <input
-                  className="w-full rounded-l-md rounded-r-none border-gray-400"
-                  style={{ borderRight: "1px inset" }}
-                  type="number"
-                  id="intake-amount"
-                  {...register("intake_amount")}
-                />
-                <select
-                  className="rounded-l-none rounded-r-md"
-                  defaultValue={""}
-                  {...register("intake_unit")}
-                >
-                  <option value="" disabled>
-                    単位
-                  </option>
-                  <option value="錠" selected>
-                    錠
-                  </option>
-                  <option value="g">g</option>
-                  <option value="ml">ml</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label>服用タイミング:</label>
-              <div className="flex gap-5">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    className="w-6 h-auto"
-                    type="checkbox"
-                    {...register("timing_morning")}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    name="dosage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>内容量</FormLabel>
+                        <div className="flex">
+                          <Input
+                            type="number"
+                            className="rounded-r-none"
+                            {...register("dosage")}
+                          />
+                          <select
+                            className="p-2 rounded-r-md border border-input border-l-0 bg-background"
+                            defaultValue={""}
+                            {...register("dosage_unit")}
+                          >
+                            <option value="" disabled>
+                              単位
+                            </option>
+                            <option value="錠" selected>
+                              錠
+                            </option>
+                            <option value="g">g</option>
+                            <option value="ml">ml</option>
+                          </select>
+                        </div>
+                      </FormItem>
+                    )}
                   />
-                  朝
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" {...register("timing_noon")} />昼
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" {...register("timing_night")} />夜
-                </label>
-              </div>
-            </div>
 
-            <button
-              className="p-2 rounded-md font-semibold text-gray-700 bg-orange-300"
-              type="submit"
-            >
-              {selectedSupplement ? "編集" : "登録"}
-            </button>
-            <button
-              className="flex gap-2 absolute items-center self-center md:self-auto w-fit -right-3 md:right-4 -top-2 md:top-4 text-white/80 md:w-8 h-8 rounded-full"
-              onClick={() => {
-                setIsModalOpen(false);
-                setSelectedSupplement(null);
-              }}
-            >
-              <MdCancel
-                color="#fff"
-                size={32}
-                className="drop-shadow-[1px_1px_4px_rgba(0,0,0,0.6)]"
-              />
-            </button>
-          </form>
-        </div>
+                  <FormField
+                    name="intake_amount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>一回の服用量</FormLabel>
+                        <div className="flex">
+                          <Input
+                            type="number"
+                            className="rounded-r-none"
+                            {...register("intake_amount")}
+                          />
+                          <select
+                            className="p-2 rounded-r-md border border-input border-l-0 bg-background"
+                            defaultValue={""}
+                            {...register("intake_unit")}
+                          >
+                            <option value="" disabled>
+                              単位
+                            </option>
+                            <option value="錠" selected>
+                              錠
+                            </option>
+                            <option value="g">g</option>
+                            <option value="ml">ml</option>
+                          </select>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormItem>
+                  <FormLabel>服用タイミング</FormLabel>
+                  <div className="flex flex-wrap gap-5 pt-2">
+                    <Label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        className="w-4 h-4 rounded accent-orange-400"
+                        type="checkbox"
+                        {...register("timing_morning")}
+                      />
+                      朝
+                    </Label>
+                    <Label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        className="w-4 h-4 rounded accent-orange-400"
+                        type="checkbox"
+                        {...register("timing_noon")}
+                      />
+                      昼
+                    </Label>
+                    <Label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        className="w-4 h-4 rounded accent-orange-400"
+                        type="checkbox"
+                        {...register("timing_night")}
+                      />
+                      夜
+                    </Label>
+                  </div>
+                </FormItem>
+
+                <DialogFooter>
+                  <Button
+                    type="submit"
+                    className="w-full bg-orange-400 hover:bg-orange-500 text-white"
+                  >
+                    {selectedSupplement ? "編集" : "登録"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
