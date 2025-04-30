@@ -1,45 +1,75 @@
-# ディレクトリ構成（※本記載は記入例です-プロジェクトに合わせて内容を更新してください-）
+# ディレクトリ構成
 
 以下のディレクトリ構造に従って実装を行ってください：
 
 /
+├── .cursor/ # Cursor 用ルール
+│ └── rules/
+│ └── global.mdc
+├── docs/ # ドキュメント
+│ └── project-overview.yaml
+├── functions/ # Firebase Functions（Cloud Functions）
+│ ├── src/
+│ │ └── index.ts # 定期バッチ（takenTimings リセット）
+│ ├── .eslintrc.js
+│ ├── .gitignore
+│ ├── package.json
+│ ├── tsconfig.json
+│ └── tsconfig.dev.json
+├── public/ # 静的アセット
+│ ├── next.svg
+│ └── vercel.svg
 ├── src/ # アプリケーションソースコード
 │ ├── components/ # アプリケーションコンポーネント
-│ │ └──ui/ # 基本 UI（button, dialog, toast, etc.）
+│ │ ├── NotificationPopup.tsx
+│ │ └── ui/ # 基本 UI（button, dialog, form, など）
+│ │ ├── button.tsx
+│ │ ├── card.tsx
+│ │ ├── dialog.tsx
+│ │ ├── form.tsx
+│ │ ├── input.tsx
+│ │ └── label.tsx
+│ ├── context/ # コンテキスト
+│ │ └── AuthContext.tsx
 │ ├── hooks/ # カスタムフック
-│ ├── lib/ # ユーティリティ
-│ │ ├── firebaseClient.ts # Firebase クライアント設定
+│ │ └── useAuth.ts
+│ ├── lib/ # ユーティリティ & Firebase 連携
+│ │ ├── firebaseClient.ts # Firebase クライアント設定（変更禁止）
 │ │ ├── firestore.ts # Firestore 操作
-│ │ ├── resizeImage.ts # 画像リサイズユーティリティ
-│ │ ├── useNotification.ts # 通知用ユーティリティ
+│ │ ├── resizeImage.ts # 画像リサイズ
+│ │ ├── useNotification.ts # 通知フック
 │ │ └── utils.ts # 共通関数
 │ ├── pages/ # Next.js ページ
+│ │ ├── api/
+│ │ │ └── hello.ts
 │ │ ├── \_app.tsx # アプリケーションルート
 │ │ ├── \_document.tsx # ドキュメント定義
 │ │ ├── index.tsx # ホームページ
 │ │ ├── login.tsx # ログインページ
-│ │ └── signup.tsx # サインアップページ
-│ ├── providers/ # コンテキストプロバイダー
-│ └── styles/ # スタイル定義
+│ │ └── signup.tsx # 新規登録ページ
+│ ├── providers/ # プロバイダー
+│ │ └── NotificationContext.tsx
+│ └── styles/ # グローバルスタイル
 │ └── globals.css
-├── public/ # 静的ファイル
-├── node_modules/ # 依存パッケージ
-├── .git/ # Git リポジトリ
-├── package.json # プロジェクト設定
-├── package-lock.json # 依存関係ロックファイル
-├── tsconfig.json # TypeScript 設定
-├── next-env.d.ts # Next.js 型定義
-├── next.config.js # Next.js 設定
-├── postcss.config.js # PostCSS 設定
-├── .eslintrc.json # ESLint 設定
-├── .eslintignore # ESLint 除外設定
+├── firestore.rules # Firestore セキュリティルール
 ├── tailwind.config.js # Tailwind CSS 設定
+├── postcss.config.js # PostCSS 設定
+├── next.config.js # Next.js 設定
+├── tsconfig.json # TypeScript 設定
+├── components.json # shadcn/ui 設定
+├── cors.json # CORS 設定
+├── .eslintrc.json # ESLint 設定
+├── .eslintignore # ESLint 除外
+├── .gitattributes
+├── .gitignore
+├── .clineignore
+├── .clinerules
+├── package.json # プロジェクト設定
 ├── README.md # プロジェクト概要
-├── components.json # shadcn/ui コンポーネント設定
-└── cors.json # CORS 設定ファイル
+└── technologystack.md # 技術スタック定義
 
 ### 配置ルール
 
-- UI コンポーネント → `src/components/ui/`
-- API エンドポイント → `src/pages/api/`
-- 共通処理 → `src/lib/utils/`
+- **UI コンポーネント** → `src/components/ui/`
+- **API エンドポイント** → `src/pages/api/`
+- **共通処理** → `src/lib/utils/`

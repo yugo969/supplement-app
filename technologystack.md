@@ -37,14 +37,10 @@
   - `src/lib/firebaseClient.ts` にて一元管理
   - API キーやプロジェクト設定は環境変数（例: .env.local など）を介して提供すること
 - これらのファイルは変更禁止（変更が必要な場合は承認が必要）：
-  <!-- - types.ts - 型定義の一元管理
-  - config.ts - 環境設定の一元管理 -->
   - firebaseClient.ts
   - Firebase の設定ファイルはセキュリティ上重要なため、変更が必要な場合は事前の承認を得る
 
 ## 実装規則
-
-<!-- - 型定義は必ず types.ts を参照 -->
 
 - Firebase 関連の設定は `src/lib/firebaseClient.ts` でのみ定義し、個別の変更は行わない
 - 型定義は可能な限り共通の型ファイルや TypeScript の仕組みを活用する
