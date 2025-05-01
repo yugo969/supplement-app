@@ -1,22 +1,41 @@
-import * as React from "react"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+export interface InputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  errorMessage?: string;
+}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, errorMessage, ...props }, ref) => {
+    const uniqueId = React.useId();
+    const inputId = props.id || `input-${uniqueId}`;
+    const errorId = errorMessage ? `${inputId}-error` : undefined;
+
     return (
-      <input
-        type={type}
-        className={cn(
-          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-          className
+      <div className="relative w-full">
+        <input
+          type={type}
+          className={cn(
+            "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+            errorMessage && "border-destructive focus-visible:ring-destructive",
+            className
+          )}
+          ref={ref}
+          aria-invalid={errorMessage ? true : undefined}
+          aria-describedby={errorId}
+          {...props}
+        />
+        {errorMessage && (
+          <p id={errorId} className="mt-1 text-sm text-destructive">
+            {errorMessage}
+          </p>
         )}
-        ref={ref}
-        {...props}
-      />
-    )
+      </div>
+    );
   }
-)
-Input.displayName = "Input"
+);
+Input.displayName = "Input";
 
-export { Input }
+export { Input };
