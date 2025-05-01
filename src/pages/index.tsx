@@ -86,6 +86,7 @@ export default function Home() {
     handleSubmit,
     formState: { errors },
     setValue,
+    reset,
   } = methods;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [supplements, setSupplements] = useState<any[]>([]);
@@ -196,6 +197,20 @@ export default function Home() {
     await firebase.auth().signOut();
   };
 
+  const resetForm = () => {
+    reset({
+      supplement_name: "",
+      dosage: 0,
+      dosage_unit: "錠",
+      intake_amount: 0,
+      intake_unit: "錠",
+      timing_morning: false,
+      timing_noon: false,
+      timing_night: false,
+    });
+    setUploadedImage(null);
+  };
+
   const handleAddOrUpdateSupplement = async (data: FormData) => {
     const dosage = Number(data.dosage);
     const intake_amount = Number(data.intake_amount);
@@ -227,6 +242,7 @@ export default function Home() {
     setIsModalOpen(false);
     setSelectedSupplement(null);
     setUploadedImage(null);
+    resetForm();
 
     getSupplements()
       .then((data) => {
@@ -519,6 +535,7 @@ export default function Home() {
             if (!open) {
               setIsModalOpen(false);
               setSelectedSupplement(null);
+              resetForm();
             }
           }}
         >
