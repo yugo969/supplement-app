@@ -53,7 +53,7 @@ const SignupPage: React.FC = () => {
             <input
               id="email"
               type="email"
-              className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring focus:ring-2 focus:ring-offset-2"
+              className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring-2 focus:ring-offset-2"
               {...register("email", {
                 required: "メールアドレスを入力してください",
               })}
@@ -76,7 +76,7 @@ const SignupPage: React.FC = () => {
             <input
               id="password"
               type="password"
-              className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring focus:ring-2 focus:ring-offset-2"
+              className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring-2 focus:ring-offset-2"
               {...register("password", {
                 required: "パスワードを入力してください",
               })}
