@@ -17,7 +17,7 @@ const pathVariants = {
     pathLength: 1,
     opacity: 1,
     transition: {
-      duration: 0.3,
+      duration: 0.2,
       ease: "easeInOut",
     },
   },
@@ -86,7 +86,7 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
       x: position.x,
       y: position.y,
       transition: {
-        duration: 0.4,
+        duration: 0.25,
         ease: "easeOut",
       },
     },
@@ -96,7 +96,7 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
       x: position.x,
       y: position.y,
       transition: {
-        duration: 0.5,
+        duration: 0.25,
         ease: "easeInOut",
       },
     },
@@ -108,7 +108,7 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
       // 表示アニメーション完了時に一定時間後に終了アニメーションを開始
       setTimeout(() => {
         onAnimationComplete && onAnimationComplete();
-      }, 600);
+      }, 400);
     }
   };
 
