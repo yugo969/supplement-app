@@ -4,16 +4,15 @@ import { Variants } from "framer-motion";
 export const cardHoverVariants: Variants = {
   initial: {
     scale: 1,
-    boxShadow: "0px 0px 0px rgba(0, 0, 0, 0.1)",
-    filter: "brightness(1)",
-    transition: { duration: 0.3, ease: "easeOut" },
+    y: 0,
+    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+    transition: { duration: 0.2, ease: "easeOut" },
   },
   hover: {
-    scale: 1.03,
-    boxShadow:
-      "0px 10px 15px rgba(0, 0, 0, 0.1), 0px 0px 10px rgba(255, 165, 0, 0.3)",
-    filter: "brightness(1.05)",
-    transition: { duration: 0.3, ease: "easeIn" },
+    scale: 1.02,
+    y: -5,
+    boxShadow: "0px 8px 15px rgba(0, 0, 0, 0.15)",
+    transition: { duration: 0.2, ease: "easeOut" },
   },
 };
 
