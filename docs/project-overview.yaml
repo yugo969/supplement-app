@@ -8,6 +8,7 @@ project:
     language: TypeScript
     backend: Firebase
     styling: TailwindCSS 3.3.3
+    animation: framer-motion
 
 architecture:
   directories:
@@ -73,3 +74,25 @@ features:
           - src/pages/login.tsx
           - src/pages/signup.tsx
         details: フォーカス状態の視覚的フィードバックの強化（リングスタイルなど）
+
+  - name: アニメーション
+    description: ユーザー体験向上のためのアニメーション機能
+    location:
+      - src/lib/animation.ts
+      - src/components/ui/animated-card.tsx
+      - src/components/AnimatedFeedback.tsx
+      - src/components/PageTransition.tsx
+      - src/pages/_app.tsx
+      - src/pages/index.tsx
+    implementations:
+      - name: カードホバーアニメーション
+        location: src/components/ui/animated-card.tsx
+        details: カードUIにカーソルホバー時のアニメーション効果
+
+      - name: 服用記録フィードバックアニメーション
+        location: src/components/AnimatedFeedback.tsx
+        details: 服用記録時の視覚的フィードバックアニメーション
+
+      - name: ページ遷移アニメーション
+        location: src/components/PageTransition.tsx
+        details: ページ間の遷移をスムーズにするアニメーション
