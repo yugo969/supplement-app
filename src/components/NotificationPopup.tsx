@@ -1,15 +1,36 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useNotification } from "@/lib/useNotification";
 import { Button } from "@/components/ui/button";
 
 const NotificationPopup = () => {
   const { isVisible, notificationProps } = useNotification();
+  const popupRef = useRef<HTMLDivElement>(null);
+
+  // ポップアップが表示されたら、フォーカスを移動
+  useEffect(() => {
+    if (isVisible && popupRef.current) {
+      popupRef.current.focus();
+    }
+  }, [isVisible]);
+
   if (!isVisible || !notificationProps) return null;
 
   return (
-    <div className="fixed top-0 bottom-0 left-0 right-0 overflow-hidden overscroll-none flex justify-center items-center w-screen h-screen bg-black/60 z-50">
-      <div className="flex flex-col justify-center items-center gap-4 w-fit max-w-[90vw] h-fit rounded-lg py-6 px-8 md:py-10 md:px-16 bg-white/90 text-black shadow-lg border border-gray-200">
-        <p className="text-center text-base md:text-lg font-medium">
+    <div
+      className="fixed top-0 bottom-0 left-0 right-0 overflow-hidden overscroll-none flex justify-center items-center w-screen h-screen bg-black/60 z-50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="notification-message"
+    >
+      <div
+        ref={popupRef}
+        className="flex flex-col justify-center items-center gap-4 w-fit max-w-[90vw] h-fit rounded-lg py-6 px-8 md:py-10 md:px-16 bg-white/90 text-black shadow-lg border border-gray-200"
+        tabIndex={-1}
+      >
+        <p
+          id="notification-message"
+          className="text-center text-base md:text-lg font-medium"
+        >
           {notificationProps.message}
         </p>
 
