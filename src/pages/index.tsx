@@ -270,56 +270,66 @@ export default function Home() {
         isModalOpen && "overflow-hidden"
       }`}
     >
-      <div className="relative">
+      <main className="relative">
         <Button
           className="fixed bottom-6 right-4 z-10 md:hidden rounded-full bg-orange-400 hover:bg-orange-500 p-0 w-16 h-16 shadow-lg shadow-slate-500"
           onClick={() => setIsModalOpen(true)}
           size="icon"
+          aria-label="サプリを追加"
         >
           <MdOutlineAddBox size={32} />
         </Button>
         <div className="relative flex flex-col w-screen h-full md:p-10 p-4 gap-6">
-          <div className="flex md:sticky md:top-2 bg-white/80 z-10 justify-between items-center rounded-md shadow-md shadow-slate-400 md:p-6 p-3">
-            <h2 className="flex items-center sm:gap-2 text-gray-600 md:text-xl text-lg">
-              <MdOutlineMedication size={40} />
+          <header className="flex md:sticky md:top-2 bg-white/80 z-10 justify-between items-center rounded-md shadow-md shadow-slate-400 md:p-6 p-3">
+            <h1 className="flex items-center sm:gap-2 text-gray-600 md:text-xl text-lg">
+              <MdOutlineMedication size={40} aria-hidden="true" />
               <span className="font-bold leading-6">サプリ KEEPER</span>
-            </h2>
+            </h1>
             <div className="flex gap-3">
               <Button
                 variant="outline"
                 className="text-orange-400 border-orange-400 font-semibold hover:bg-orange-100 shadow-sm max-md:hidden"
                 onClick={() => setIsModalOpen(true)}
+                aria-label="サプリを追加"
               >
                 <span>サプリ追加</span>
-                <MdOutlineAddBox size={24} />
+                <MdOutlineAddBox size={24} aria-hidden="true" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
                 className="text-gray-500 border-gray-400 hover:bg-gray-100"
                 onClick={handleLogout}
+                aria-label="ログアウト"
               >
                 ログアウト
               </Button>
             </div>
-          </div>
+          </header>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 justify-items-center">
+          <section
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 justify-items-center"
+            aria-label="サプリメント一覧"
+          >
             {supplements.map((supplement) => (
               <Card
                 key={supplement.id}
                 className="w-full max-w-[356px] overflow-hidden border-2 border-white bg-zinc-50 shadow-slate-300"
+                tabIndex={0}
               >
                 <div className="relative w-full h-auto aspect-[3/2]">
                   {supplement.imageUrl ? (
                     <Image
                       src={supplement.imageUrl}
-                      alt={supplement.supplement_name}
+                      alt={`${supplement.supplement_name}の画像`}
                       fill
                       className="object-cover"
                     />
                   ) : (
-                    <div className="flex justify-center items-center w-full h-full text-black/50 text-[24px] bg-gray-400">
+                    <div
+                      className="flex justify-center items-center w-full h-full text-black/50 text-[24px] bg-gray-400"
+                      aria-label="画像なし"
+                    >
                       no-image
                     </div>
                   )}
@@ -327,9 +337,9 @@ export default function Home() {
 
                 <CardHeader className="p-0">
                   <div className="text-center break-all">
-                    <h3 className="py-1 px-4 bg-gray-700 text-bold text-16px text-white rounded-b-[40px]">
+                    <h2 className="py-1 px-4 bg-gray-700 text-bold text-16px text-white rounded-b-[40px]">
                       {supplement.supplement_name}
-                    </h3>
+                    </h2>
                   </div>
                 </CardHeader>
 
@@ -379,6 +389,14 @@ export default function Home() {
                               ? "bg-gradient-to-tr from-cyan-400 to-orange-400 text-white border-0"
                               : "border-orange-400 text-orange-600"
                           }`}
+                          aria-label={`朝 ${
+                            supplement.takenTimings?.morning
+                              ? "服用済み"
+                              : "未服用"
+                          }`}
+                          aria-pressed={
+                            supplement.takenTimings?.morning || false
+                          }
                         >
                           朝 {supplement.takenTimings?.morning ? "✔" : ""}
                         </Button>
@@ -394,6 +412,12 @@ export default function Home() {
                               ? "bg-orange-400 text-white border-0"
                               : "border-orange-400 text-orange-600"
                           }`}
+                          aria-label={`昼 ${
+                            supplement.takenTimings?.noon
+                              ? "服用済み"
+                              : "未服用"
+                          }`}
+                          aria-pressed={supplement.takenTimings?.noon || false}
                         >
                           昼 {supplement.takenTimings?.noon ? "✔" : ""}
                         </Button>
@@ -408,6 +432,12 @@ export default function Home() {
                               ? "bg-gradient-to-bl from-cyan-400 to-orange-400 text-white border-0"
                               : "border-orange-400 text-orange-600"
                           }`}
+                          aria-label={`夜 ${
+                            supplement.takenTimings?.night
+                              ? "服用済み"
+                              : "未服用"
+                          }`}
+                          aria-pressed={supplement.takenTimings?.night || false}
                         >
                           夜 {supplement.takenTimings?.night ? "✔" : ""}
                         </Button>
@@ -422,6 +452,7 @@ export default function Home() {
                     size="sm"
                     className="border-gray-500 text-gray-700"
                     onClick={() => handleOpenUpdateModal(supplement)}
+                    aria-label={`${supplement.supplement_name}を編集`}
                   >
                     編集
                   </Button>
@@ -430,15 +461,16 @@ export default function Home() {
                     size="sm"
                     className="border-b border-gray-500 text-gray-700 rounded-none px-3"
                     onClick={() => handleDeleteSupplement(supplement.id)}
+                    aria-label={`${supplement.supplement_name}を削除`}
                   >
                     削除
                   </Button>
                 </CardFooter>
               </Card>
             ))}
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
       {isModalOpen && (
         <Dialog
           open={isModalOpen}
@@ -463,24 +495,30 @@ export default function Home() {
                   e.preventDefault();
                   handleSubmit(handleAddOrUpdateSupplement)(e);
                 }}
+                aria-label={
+                  selectedSupplement
+                    ? "サプリ編集フォーム"
+                    : "サプリ追加フォーム"
+                }
               >
                 <div className="group relative w-full aspect-[3/2] rounded-md bg-gray-200">
                   {!uploadedImage ? (
                     <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer">
-                      <MdAddAPhoto size={64} />
+                      <MdAddAPhoto size={64} aria-hidden="true" />
                       <span className="text-[16px]">画像追加</span>
                       <input
                         type="file"
                         {...register("image")}
                         onChange={handleImageChange}
                         className="opacity-0 absolute inset-0 w-full h-full"
+                        aria-label="サプリの画像をアップロード"
                       />
                     </label>
                   ) : (
                     <div className="relative w-full h-full">
                       <Image
                         src={uploadedImage}
-                        alt="Uploaded"
+                        alt="アップロードされた画像"
                         fill
                         className="absolute inset-0 w-full h-full object-cover"
                       />
@@ -489,8 +527,9 @@ export default function Home() {
                           className="flex flex-col justify-center items-center gap-0.5 opacity-100 transition duration-300 group-hover:opacity-100 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-[22px] w-10 h-10 rounded"
                           onClick={handleImageDelete}
                           type="button"
+                          aria-label="画像を削除"
                         >
-                          <MdDeleteForever size={60} />
+                          <MdDeleteForever size={60} aria-hidden="true" />
                           <span className="text-[12px]">削除</span>
                         </button>
                       </div>
@@ -502,10 +541,14 @@ export default function Home() {
                   name="supplement_name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>サプリ名</FormLabel>
+                      <FormLabel htmlFor="supplement_name">サプリ名</FormLabel>
                       <FormControl>
                         <Input
-                          {...register("supplement_name", { required: true })}
+                          id="supplement_name"
+                          {...register("supplement_name", {
+                            required: "サプリ名は必須です",
+                          })}
+                          aria-required="true"
                         />
                       </FormControl>
                     </FormItem>
@@ -517,17 +560,21 @@ export default function Home() {
                     name="dosage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>内容量</FormLabel>
+                        <FormLabel htmlFor="dosage">内容量</FormLabel>
                         <div className="flex">
                           <Input
+                            id="dosage"
                             type="number"
                             className="rounded-r-none"
                             {...register("dosage")}
+                            aria-label="内容量の数値"
                           />
                           <select
+                            id="dosage_unit"
                             className="p-2 rounded-r-md border border-input border-l-0 bg-background"
                             defaultValue={""}
                             {...register("dosage_unit")}
+                            aria-label="内容量の単位"
                           >
                             <option value="" disabled>
                               単位
@@ -547,17 +594,23 @@ export default function Home() {
                     name="intake_amount"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>一回の服用量</FormLabel>
+                        <FormLabel htmlFor="intake_amount">
+                          一回の服用量
+                        </FormLabel>
                         <div className="flex">
                           <Input
+                            id="intake_amount"
                             type="number"
                             className="rounded-r-none"
                             {...register("intake_amount")}
+                            aria-label="一回の服用量の数値"
                           />
                           <select
+                            id="intake_unit"
                             className="p-2 rounded-r-md border border-input border-l-0 bg-background"
                             defaultValue={""}
                             {...register("intake_unit")}
+                            aria-label="一回の服用量の単位"
                           >
                             <option value="" disabled>
                               単位
@@ -574,27 +627,39 @@ export default function Home() {
                   />
                 </div>
 
-                <FormItem>
-                  <FormLabel>服用タイミング</FormLabel>
+                <FormItem role="group" aria-labelledby="timing-label">
+                  <FormLabel id="timing-label">服用タイミング</FormLabel>
                   <div className="flex flex-wrap gap-5 pt-2">
-                    <Label className="flex items-center gap-2 cursor-pointer">
+                    <Label
+                      htmlFor="timing_morning"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <input
+                        id="timing_morning"
                         className="w-4 h-4 rounded accent-orange-400"
                         type="checkbox"
                         {...register("timing_morning")}
                       />
                       朝
                     </Label>
-                    <Label className="flex items-center gap-2 cursor-pointer">
+                    <Label
+                      htmlFor="timing_noon"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <input
+                        id="timing_noon"
                         className="w-4 h-4 rounded accent-orange-400"
                         type="checkbox"
                         {...register("timing_noon")}
                       />
                       昼
                     </Label>
-                    <Label className="flex items-center gap-2 cursor-pointer">
+                    <Label
+                      htmlFor="timing_night"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <input
+                        id="timing_night"
                         className="w-4 h-4 rounded accent-orange-400"
                         type="checkbox"
                         {...register("timing_night")}
