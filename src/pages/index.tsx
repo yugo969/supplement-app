@@ -99,6 +99,9 @@ export default function Home() {
 
   const { showNotification } = useNotification();
 
+  // 単位の同期処理のための状態
+  const [selectedUnit, setSelectedUnit] = useState<string>("錠");
+
   const handleTakeDose = async (supplementId: string, timing: string) => {
     const timingId = `${supplementId}-${timing}`;
     const supplement = supplements.find((s) => s.id === supplementId);
@@ -187,7 +190,7 @@ export default function Home() {
   };
 
   const resetForm = () => {
-    reset({
+    methods.reset({
       supplement_name: "",
       dosage: 0,
       dosage_unit: "錠",
@@ -197,6 +200,7 @@ export default function Home() {
       timing_noon: false,
       timing_night: false,
     });
+    setSelectedUnit("錠");
     setUploadedImage(null);
   };
 
@@ -253,6 +257,9 @@ export default function Home() {
     setValue("timing_noon", supplement.timing_noon);
     setValue("timing_night", supplement.timing_night);
     setUploadedImage(supplement.imageUrl);
+
+    // 単位の状態を更新
+    setSelectedUnit(supplement.dosage_unit);
   };
 
   const handleDeleteSupplement = async (id: string) => {
@@ -307,6 +314,16 @@ export default function Home() {
 
   const handleImageDelete = () => {
     setUploadedImage(null);
+  };
+
+  // 単位の変更を同期させる関数
+  const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newUnit = e.target.value;
+    setSelectedUnit(newUnit);
+
+    // 両方の単位を更新
+    setValue("dosage_unit", newUnit);
+    setValue("intake_unit", newUnit);
   };
 
   if (user) {
@@ -631,24 +648,50 @@ export default function Home() {
                             id="dosage"
                             type="number"
                             className="rounded-r-none"
-                            {...register("dosage")}
+                            {...register("dosage", {
+                              required: "内容量は必須です",
+                              valueAsNumber: true,
+                              validate: {
+                                isNumber: (value) =>
+                                  (!isNaN(value) &&
+                                    /^\d*\.?\d*$/.test(String(value))) ||
+                                  "数値のみ入力可能です",
+                              },
+                              min: {
+                                value: 0,
+                                message: "0以上の値を入力してください",
+                              },
+                            })}
                             aria-label="内容量の数値"
+                            aria-required="true"
+                            onKeyDown={(e) => {
+                              // アルファベットキーの入力を防止
+                              if (/^[a-zA-Z]$/.test(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
                           />
                           <select
                             id="dosage_unit"
                             className="p-2 rounded-r-md border border-input border-l-0 bg-background"
-                            defaultValue={""}
-                            {...register("dosage_unit")}
+                            value={selectedUnit}
+                            {...register("dosage_unit", {
+                              required: "単位は必須です",
+                            })}
+                            onChange={handleUnitChange}
                             aria-label="内容量の単位"
+                            aria-required="true"
                           >
                             <option value="" disabled>
                               単位
                             </option>
-                            <option value="錠" selected>
-                              錠
-                            </option>
+                            <option value="錠">錠</option>
+                            <option value="粒">粒</option>
+                            <option value="カプセル">カプセル</option>
                             <option value="g">g</option>
+                            <option value="mg">mg</option>
                             <option value="ml">ml</option>
+                            <option value="包">包</option>
                           </select>
                         </div>
                       </FormItem>
@@ -667,24 +710,50 @@ export default function Home() {
                             id="intake_amount"
                             type="number"
                             className="rounded-r-none"
-                            {...register("intake_amount")}
+                            {...register("intake_amount", {
+                              required: "服用量は必須です",
+                              valueAsNumber: true,
+                              validate: {
+                                isNumber: (value) =>
+                                  (!isNaN(value) &&
+                                    /^\d*\.?\d*$/.test(String(value))) ||
+                                  "数値のみ入力可能です",
+                              },
+                              min: {
+                                value: 0,
+                                message: "0以上の値を入力してください",
+                              },
+                            })}
                             aria-label="一回の服用量の数値"
+                            aria-required="true"
+                            onKeyDown={(e) => {
+                              // アルファベットキーの入力を防止
+                              if (/^[a-zA-Z]$/.test(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
                           />
                           <select
                             id="intake_unit"
                             className="p-2 rounded-r-md border border-input border-l-0 bg-background"
-                            defaultValue={""}
-                            {...register("intake_unit")}
+                            value={selectedUnit}
+                            {...register("intake_unit", {
+                              required: "単位は必須です",
+                            })}
+                            onChange={handleUnitChange}
                             aria-label="一回の服用量の単位"
+                            aria-required="true"
                           >
                             <option value="" disabled>
                               単位
                             </option>
-                            <option value="錠" selected>
-                              錠
-                            </option>
+                            <option value="錠">錠</option>
+                            <option value="粒">粒</option>
+                            <option value="カプセル">カプセル</option>
                             <option value="g">g</option>
+                            <option value="mg">mg</option>
                             <option value="ml">ml</option>
+                            <option value="包">包</option>
                           </select>
                         </div>
                       </FormItem>
