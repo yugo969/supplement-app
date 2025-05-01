@@ -51,6 +51,7 @@ import {
   AnimatedCardFooter,
 } from "@/components/ui/animated-card";
 import AnimatedFeedback from "@/components/AnimatedFeedback";
+import { AnimatedButton } from "@/components/ui/animated-button";
 
 type FormData = {
   supplement_name: string;
@@ -427,21 +428,16 @@ export default function Home() {
                     </span>
                     <div className="p-2 flex flex-wrap gap-2 md:text-xs text-base text-black-950 font-regular">
                       {supplement.timing_morning && (
-                        <Button
+                        <AnimatedButton
                           id={`${supplement.id}-morning`}
                           onClick={() =>
                             handleTakeDose(supplement.id, "morning")
                           }
-                          variant="outline"
-                          size="sm"
                           disabled={animatingIds.includes(
                             `${supplement.id}-morning`
                           )}
-                          className={`rounded-full ${
-                            supplement.takenTimings?.morning
-                              ? "bg-gradient-to-tr from-cyan-400 to-orange-400 text-white border-0"
-                              : "border-orange-400 text-orange-600"
-                          }`}
+                          checked={supplement.takenTimings?.morning || false}
+                          label="朝"
                           aria-label={`朝 ${
                             supplement.takenTimings?.morning
                               ? "服用済み"
@@ -450,58 +446,42 @@ export default function Home() {
                           aria-pressed={
                             supplement.takenTimings?.morning || false
                           }
-                        >
-                          朝 {supplement.takenTimings?.morning ? "✓" : ""}
-                        </Button>
+                        />
                       )}
 
                       {supplement.timing_noon && (
-                        <Button
+                        <AnimatedButton
                           id={`${supplement.id}-noon`}
                           onClick={() => handleTakeDose(supplement.id, "noon")}
-                          variant="outline"
-                          size="sm"
                           disabled={animatingIds.includes(
                             `${supplement.id}-noon`
                           )}
-                          className={`rounded-full ${
-                            supplement.takenTimings?.noon
-                              ? "bg-orange-400 text-white border-0"
-                              : "border-orange-400 text-orange-600"
-                          }`}
+                          checked={supplement.takenTimings?.noon || false}
+                          label="昼"
                           aria-label={`昼 ${
                             supplement.takenTimings?.noon
                               ? "服用済み"
                               : "未服用"
                           }`}
                           aria-pressed={supplement.takenTimings?.noon || false}
-                        >
-                          昼 {supplement.takenTimings?.noon ? "✓" : ""}
-                        </Button>
+                        />
                       )}
                       {supplement.timing_night && (
-                        <Button
+                        <AnimatedButton
                           id={`${supplement.id}-night`}
                           onClick={() => handleTakeDose(supplement.id, "night")}
-                          variant="outline"
-                          size="sm"
                           disabled={animatingIds.includes(
                             `${supplement.id}-night`
                           )}
-                          className={`rounded-full ${
-                            supplement.takenTimings?.night
-                              ? "bg-gradient-to-bl from-cyan-400 to-orange-400 text-white border-0"
-                              : "border-orange-400 text-orange-600"
-                          }`}
+                          checked={supplement.takenTimings?.night || false}
+                          label="夜"
                           aria-label={`夜 ${
                             supplement.takenTimings?.night
                               ? "服用済み"
                               : "未服用"
                           }`}
                           aria-pressed={supplement.takenTimings?.night || false}
-                        >
-                          夜 {supplement.takenTimings?.night ? "✓" : ""}
-                        </Button>
+                        />
                       )}
                     </div>
                   </div>

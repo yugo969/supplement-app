@@ -19,7 +19,6 @@ const pathVariants = {
     transition: {
       duration: 0.3,
       ease: "easeInOut",
-      delay: 0.1,
     },
   },
 };
@@ -30,7 +29,6 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
   onAnimationComplete,
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [targetPosition, setTargetPosition] = useState({ x: 0, y: 0 });
   const [ready, setReady] = useState(false);
   const uniqueKeyRef = useRef<string>(`anim-${Date.now()}`);
 
@@ -61,14 +59,8 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
         const cardCenterX = cardRect.left + cardRect.width / 2;
         const cardCenterY = cardRect.top + cardRect.height / 2;
 
-        // ボタンの位置を取得
-        const buttonRect = button.getBoundingClientRect();
-        const buttonCenterX = buttonRect.left + buttonRect.width / 2;
-        const buttonCenterY = buttonRect.top + buttonRect.height / 2;
-
         // 位置情報をセット
         setPosition({ x: cardCenterX, y: cardCenterY });
-        setTargetPosition({ x: buttonCenterX, y: buttonCenterY });
 
         // すべての準備ができてからアニメーション開始
         requestAnimationFrame(() => {
@@ -90,7 +82,7 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
     },
     visible: {
       opacity: 1,
-      scale: 2,
+      scale: 2.5,
       x: position.x,
       y: position.y,
       transition: {
@@ -100,9 +92,9 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
     },
     exit: {
       opacity: 0,
-      scale: 0.8,
-      x: targetPosition.x,
-      y: targetPosition.y,
+      scale: 3,
+      x: position.x,
+      y: position.y,
       transition: {
         duration: 0.5,
         ease: "easeInOut",
@@ -116,7 +108,7 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
       // 表示アニメーション完了時に一定時間後に終了アニメーションを開始
       setTimeout(() => {
         onAnimationComplete && onAnimationComplete();
-      }, 400);
+      }, 600);
     }
   };
 
