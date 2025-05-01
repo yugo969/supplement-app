@@ -115,17 +115,23 @@ export default function Home() {
 
     const timingKey = timing as keyof typeof currentTakenTimings;
 
-    if (!currentTakenTimings[timingKey]) {
-      setShowFeedback(false);
-
-      setTimeout(() => {
-        setAnimatingIds((prev) => [...prev, timingId]);
-        setFeedbackTimingId(timingId);
-        setShowFeedback(true);
-      }, 10);
-    } else {
+    if (currentTakenTimings[timingKey]) {
       handleUpdateSupplementTiming(supplementId, timing, false);
+      return;
     }
+
+    const dosageLeft = supplement.dosage_left ?? supplement.dosage;
+    if (dosageLeft <= 0 || dosageLeft < supplement.intake_amount) {
+      return;
+    }
+
+    setShowFeedback(false);
+
+    setTimeout(() => {
+      setAnimatingIds((prev) => [...prev, timingId]);
+      setFeedbackTimingId(timingId);
+      setShowFeedback(true);
+    }, 10);
   };
 
   const handleFeedbackComplete = () => {
@@ -449,9 +455,15 @@ export default function Home() {
                           onClick={() =>
                             handleTakeDose(supplement.id, "morning")
                           }
-                          disabled={animatingIds.includes(
-                            `${supplement.id}-morning`
-                          )}
+                          disabled={
+                            showFeedback ||
+                            animatingIds.includes(`${supplement.id}-morning`) ||
+                            (!supplement.takenTimings?.morning &&
+                              ((supplement.dosage_left ?? supplement.dosage) <=
+                                0 ||
+                                (supplement.dosage_left ?? supplement.dosage) <
+                                  supplement.intake_amount))
+                          }
                           checked={supplement.takenTimings?.morning || false}
                           label="朝"
                           aria-label={`朝 ${
@@ -469,9 +481,15 @@ export default function Home() {
                         <AnimatedButton
                           id={`${supplement.id}-noon`}
                           onClick={() => handleTakeDose(supplement.id, "noon")}
-                          disabled={animatingIds.includes(
-                            `${supplement.id}-noon`
-                          )}
+                          disabled={
+                            showFeedback ||
+                            animatingIds.includes(`${supplement.id}-noon`) ||
+                            (!supplement.takenTimings?.noon &&
+                              ((supplement.dosage_left ?? supplement.dosage) <=
+                                0 ||
+                                (supplement.dosage_left ?? supplement.dosage) <
+                                  supplement.intake_amount))
+                          }
                           checked={supplement.takenTimings?.noon || false}
                           label="昼"
                           aria-label={`昼 ${
@@ -486,9 +504,15 @@ export default function Home() {
                         <AnimatedButton
                           id={`${supplement.id}-night`}
                           onClick={() => handleTakeDose(supplement.id, "night")}
-                          disabled={animatingIds.includes(
-                            `${supplement.id}-night`
-                          )}
+                          disabled={
+                            showFeedback ||
+                            animatingIds.includes(`${supplement.id}-night`) ||
+                            (!supplement.takenTimings?.night &&
+                              ((supplement.dosage_left ?? supplement.dosage) <=
+                                0 ||
+                                (supplement.dosage_left ?? supplement.dosage) <
+                                  supplement.intake_amount))
+                          }
                           checked={supplement.takenTimings?.night || false}
                           label="夜"
                           aria-label={`夜 ${
