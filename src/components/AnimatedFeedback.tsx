@@ -17,7 +17,7 @@ const pathVariants = {
     pathLength: 1,
     opacity: 1,
     transition: {
-      duration: 0.2,
+      duration: 0.15,
       ease: "easeInOut",
     },
   },
@@ -32,6 +32,19 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
   const [ready, setReady] = useState(false);
   const uniqueKeyRef = useRef<string>(`anim-${Date.now()}`);
 
+  // クリーンアップ用タイマー
+  const animationTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // コンポーネントのクリーンアップ
+  useEffect(() => {
+    return () => {
+      // コンポーネントのアンマウント時にタイマーをクリアする
+      if (animationTimerRef.current) {
+        clearTimeout(animationTimerRef.current);
+      }
+    };
+  }, []);
+
   // 位置を計算する - 完全に初期化されてから
   useEffect(() => {
     if (isVisible && timingId) {
@@ -41,17 +54,28 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
 
       // レンダリングサイクルを待ってから処理
       requestAnimationFrame(() => {
-        // ボタン要素を取得
-        const button = document.getElementById(timingId);
-        if (!button) {
-          console.error("Button element not found:", timingId);
+        // 要素を取得
+        const element = document.getElementById(timingId);
+        if (!element) {
+          console.error("Element not found:", timingId);
+          // 要素が見つからない場合も完了コールバックを呼び出す
+          if (onAnimationComplete) {
+            onAnimationComplete();
+          }
           return;
         }
 
-        // カードの中心を取得
-        const card = button.closest(".animated-card");
+        // カードの中心を取得（カードIDの場合とタイミングボタンIDの場合を考慮）
+        const card = element.classList.contains("animated-card")
+          ? element
+          : element.closest(".animated-card");
+
         if (!card) {
-          console.error("Card element not found for button:", timingId);
+          console.error("Card element not found for:", timingId);
+          // 要素が見つからない場合も完了コールバックを呼び出す
+          if (onAnimationComplete) {
+            onAnimationComplete();
+          }
           return;
         }
 
@@ -70,7 +94,34 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
     } else {
       setReady(false);
     }
-  }, [isVisible, timingId]);
+  }, [isVisible, timingId, onAnimationComplete]);
+
+  // アニメーション完了時のコールバック処理を分離
+  useEffect(() => {
+    if (isVisible && ready) {
+      // アニメーション時間を考慮して遅延させてコールバック実行
+      animationTimerRef.current = setTimeout(() => {
+        if (onAnimationComplete) {
+          onAnimationComplete();
+        }
+      }, 500); // アニメーション完了を待つ十分な時間
+    }
+
+    // 必ず一定時間後にはリセットする（フォールバック処理）
+    const fallbackTimer = setTimeout(() => {
+      if (isVisible && onAnimationComplete) {
+        onAnimationComplete();
+      }
+    }, 1000);
+
+    return () => {
+      // クリーンアップ時に両方のタイマーを解除
+      if (animationTimerRef.current) {
+        clearTimeout(animationTimerRef.current);
+      }
+      clearTimeout(fallbackTimer);
+    };
+  }, [isVisible, ready, onAnimationComplete]);
 
   // アニメーションのバリアント
   const containerVariants = {
@@ -86,7 +137,7 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
       x: position.x,
       y: position.y,
       transition: {
-        duration: 0.25,
+        duration: 0.2,
         ease: "easeOut",
       },
     },
@@ -96,20 +147,10 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
       x: position.x,
       y: position.y,
       transition: {
-        duration: 0.25,
+        duration: 0.2,
         ease: "easeInOut",
       },
     },
-  };
-
-  // アニメーションの流れを管理
-  const handleAnimationComplete = (definition: string) => {
-    if (definition === "visible") {
-      // 表示アニメーション完了時に一定時間後に終了アニメーションを開始
-      setTimeout(() => {
-        onAnimationComplete && onAnimationComplete();
-      }, 400);
-    }
   };
 
   return (
@@ -121,7 +162,6 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
           animate="visible"
           exit="exit"
           variants={containerVariants}
-          onAnimationComplete={handleAnimationComplete}
           style={{
             position: "fixed",
             top: 0,
@@ -139,11 +179,24 @@ const AnimatedFeedback: React.FC<AnimatedFeedbackProps> = ({
             fill="none"
             className="text-green-600"
             style={{
-              filter: "drop-shadow(0px 0px 3px rgba(0, 255, 0, 0.5))",
+              filter: "drop-shadow(0px 0px 4px rgba(0, 200, 0, 0.6))",
             }}
           >
+            {/* サークル部分 */}
+            <motion.circle
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="2"
+              fill="rgba(0, 200, 0, 0.2)"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
+            />
+            {/* チェックマーク部分 */}
             <motion.path
-              d="M20 6L9 17l-5-5"
+              d="M8 12l3 3 5-6"
               variants={pathVariants}
               initial="hidden"
               animate="visible"
