@@ -15,8 +15,27 @@ export const addSupplement = async (data: any) => {
   const user = firebase.auth().currentUser;
   if (!user) return;
 
+  // タイミングベースの場合は初期takenTimingsを設定
+  let initialData = { ...data };
+
+  if (data.dosage_method === "timing") {
+    initialData.takenTimings = {
+      morning: false,
+      noon: false,
+      night: false,
+      before_meal: false,
+      after_meal: false,
+      empty_stomach: false,
+      bedtime: false,
+    };
+  } else if (data.dosage_method === "count") {
+    // 回数ベースの場合は初期takenCountとdosageHistoryを設定
+    initialData.takenCount = 0;
+    initialData.dosageHistory = [];
+  }
+
   await db.collection("supplements").add({
-    ...data,
+    ...initialData,
     userId: user.uid,
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     lastTakenDate: getCurrentDate(), // 最後に服用した日付を追加
@@ -42,16 +61,25 @@ export const getSupplements = async () => {
       morning: false,
       noon: false,
       night: false,
+      before_meal: false,
+      after_meal: false,
+      empty_stomach: false,
+      bedtime: false,
     };
 
     const lastTakenDate = data.lastTakenDate || "";
     const shouldResetTimings = lastTakenDate !== currentDate;
+    const dosageMethod = data.dosage_method || "timing";
 
+    // 新しい日には服用状況をリセット（データの表示上のみ）
     if (shouldResetTimings) {
-      // 日付が変わっていれば服用状況をリセット（データの表示上のみ）
-      Object.keys(takenTimings).forEach((key) => {
-        takenTimings[key] = false;
-      });
+      if (dosageMethod === "timing") {
+        // タイミングベースの場合は各タイミングをリセット
+        Object.keys(takenTimings).forEach((key) => {
+          takenTimings[key] = false;
+        });
+      }
+      // 回数ベースの場合は後でリセット
     }
 
     return {
@@ -59,7 +87,14 @@ export const getSupplements = async () => {
       ...data,
       dosage: Number(data.dosage), // 数値に変換
       intake_amount: Number(data.intake_amount), // 数値に変換
+      dosage_method: dosageMethod,
       takenTimings: takenTimings,
+      takenCount:
+        shouldResetTimings && dosageMethod === "count"
+          ? 0
+          : data.takenCount || 0,
+      dosageHistory: data.dosageHistory || [],
+      daily_target_count: data.daily_target_count || 0,
       lastTakenDate: data.lastTakenDate || currentDate,
       shouldResetTimings: shouldResetTimings,
     };
@@ -103,22 +138,71 @@ export const resetTimingsIfDateChanged = async (id: string) => {
   if (!doc.exists) return;
 
   const data = doc.data();
-  const lastTakenDate = data?.lastTakenDate || "";
+  if (!data) return null;
+
+  const lastTakenDate = data.lastTakenDate || "";
+  const dosageMethod = data.dosage_method || "timing";
 
   if (lastTakenDate !== currentDate) {
-    const resetTimings = {
-      morning: false,
-      noon: false,
-      night: false,
-    };
+    if (dosageMethod === "timing") {
+      const resetTimings = {
+        morning: false,
+        noon: false,
+        night: false,
+        before_meal: false,
+        after_meal: false,
+        empty_stomach: false,
+        bedtime: false,
+      };
 
-    await db.collection("supplements").doc(id).update({
-      takenTimings: resetTimings,
-      lastTakenDate: currentDate,
-    });
+      await db.collection("supplements").doc(id).update({
+        takenTimings: resetTimings,
+        lastTakenDate: currentDate,
+      });
 
-    return resetTimings;
+      return resetTimings;
+    } else if (dosageMethod === "count") {
+      // 回数ベースの場合は、takenCountをリセット
+      await db
+        .collection("supplements")
+        .doc(id)
+        .update({
+          takenCount: 0,
+          lastTakenDate: currentDate,
+          // 履歴は保持するが、新しい日の履歴を開始
+          dosageHistory: data.dosageHistory || [],
+        });
+
+      return { takenCount: 0 };
+    }
   }
 
   return null;
+};
+
+export const updateSupplementCount = async (
+  id: string,
+  newDosage: number,
+  takenCount: number,
+  dosageHistory: { timestamp: string; count: number }[]
+) => {
+  const currentDate = getCurrentDate();
+
+  // 現在のドキュメントを取得して、dosage_methodを確保
+  const doc = await db.collection("supplements").doc(id).get();
+  if (!doc.exists) return;
+
+  const data = doc.data();
+  if (!data) return;
+
+  // dosage_methodを確保（デフォルトは"count"）
+  const dosageMethod = data.dosage_method || "count";
+
+  await db.collection("supplements").doc(id).update({
+    dosage: newDosage,
+    takenCount: takenCount,
+    dosageHistory: dosageHistory,
+    lastTakenDate: currentDate,
+    dosage_method: dosageMethod, // 必ず含める
+  });
 };
