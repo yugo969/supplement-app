@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
-import { ButtonHTMLAttributes, forwardRef } from "react";
+import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export interface AnimatedButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement> {
   checked?: boolean;
-  label: string;
+  label: ReactNode;
 }
 
 const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
@@ -13,10 +13,13 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
     return (
       <button
         className={cn(
-          "relative overflow-hidden rounded-full border border-orange-400 px-4 py-2 text-sm font-medium",
-          "transition-colors duration-200 ease-in-out",
-          "outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2",
-          disabled && "opacity-70 cursor-not-allowed",
+          "relative overflow-hidden rounded-full border-2 border-orange-400 px-3 py-1 h-8 text-xs font-medium",
+          "transition-all duration-200 ease-in-out",
+          "shadow-sm hover:shadow focus:shadow-md",
+          "outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-1",
+          "hover:scale-105 active:scale-95",
+          disabled &&
+            "opacity-70 cursor-not-allowed hover:scale-100 active:scale-100",
           className
         )}
         ref={ref}
@@ -36,7 +39,7 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
         {/* テキスト */}
         <span
           className={cn(
-            "relative z-10 transition-colors duration-200",
+            "relative z-10 transition-colors duration-200 flex items-center justify-center",
             checked ? "text-white" : "text-orange-600"
           )}
         >
