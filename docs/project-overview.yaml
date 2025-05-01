@@ -35,6 +35,13 @@ features:
       - deleteSupplement: サプリメント削除
       - uploadImage: 画像アップロード
       - updateSupplementDosage: 服用量更新
+      - getCurrentDate: 現在の日付を取得
+      - resetTimingsIfDateChanged: 日付変更時の服用状況リセット
+    details: |
+      サプリメントの管理機能に日付変更時の自動リセット機能を追加。
+      毎日0時になると服用状況（朝・昼・夜）が自動的にリセットされ、
+      新しい1日の服用管理が開始される。サーバーと連携して確実に
+      リセットされる仕組みになっている。
 
   - name: 通知システム
     location:
