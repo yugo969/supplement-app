@@ -18,7 +18,7 @@ input {
 
 /* アニメーション関連のスタイル */
 .animated-card {
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -45,7 +45,7 @@ input {
   mask-composite: exclude;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 
 .animated-card:hover {
@@ -76,7 +76,7 @@ button:disabled {
 svg path {
   stroke-dasharray: 30;
   stroke-dashoffset: 30;
-  animation: draw 0.5s forwards;
+  animation: draw 0.3s forwards;
 }
 
 @keyframes draw {

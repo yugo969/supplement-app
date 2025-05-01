@@ -100,38 +100,21 @@ export default function Home() {
   const { showNotification } = useNotification();
 
   const handleTakeDose = async (supplementId: string, timing: string) => {
-    const supplement = supplements.find((s) => s.id === supplementId);
-    if (!supplement) return;
-
     const timingId = `${supplementId}-${timing}`;
+    const supplement = supplements.find((s) => s.id === supplementId);
 
-    if (animatingIds.includes(timingId)) return;
-
-    const currentTakenTimings = supplement.takenTimings || {
-      morning: false,
-      noon: false,
-      night: false,
-    };
-
-    const timingKey = timing as keyof typeof currentTakenTimings;
-
-    if (currentTakenTimings[timingKey]) {
-      handleUpdateSupplementTiming(supplementId, timing, false);
+    if (
+      supplement?.takenTimings?.[timing as keyof typeof supplement.takenTimings]
+    ) {
+      await handleUpdateSupplementTiming(supplementId, timing, false);
       return;
     }
-
-    const dosageLeft = supplement.dosage_left ?? supplement.dosage;
-    if (dosageLeft <= 0 || dosageLeft < supplement.intake_amount) {
-      return;
-    }
-
-    setShowFeedback(false);
 
     setTimeout(() => {
       setAnimatingIds((prev) => [...prev, timingId]);
       setFeedbackTimingId(timingId);
       setShowFeedback(true);
-    }, 10);
+    }, 5);
   };
 
   const handleFeedbackComplete = () => {
@@ -148,7 +131,7 @@ export default function Home() {
       handleUpdateSupplementTiming(supplementId, timing, true);
 
       setAnimatingIds((prev) => prev.filter((id) => id !== timingIdCopy));
-    }, 50);
+    }, 30);
   };
 
   const handleUpdateSupplementTiming = async (
