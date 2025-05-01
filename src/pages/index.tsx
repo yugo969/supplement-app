@@ -9,6 +9,8 @@ import {
   updateSupplement,
   uploadImage,
   updateSupplementDosage,
+  resetTimingsIfDateChanged,
+  getCurrentDate,
 } from "@/lib/firestore";
 import { useEffect, useState } from "react";
 import {
@@ -74,6 +76,8 @@ type FormData = {
 type SupplementData = FormData & {
   imageUrl: string;
   dosage_left?: number; // 服用状況更新後の残量
+  lastTakenDate?: string; // 最後に服用した日付
+  shouldResetTimings?: boolean; // 日付変更によるリセットが必要かどうか
 };
 
 const maxWidth = 552;
@@ -181,8 +185,56 @@ export default function Home() {
 
   useEffect(() => {
     if (user) {
-      getSupplements().then((data) => setSupplements(data));
+      getSupplements().then((data) => {
+        // サプリメントデータに日付変更フラグがあれば処理する
+        const updatedData = data.map(async (supplement) => {
+          if (supplement.shouldResetTimings) {
+            // サーバー側でもリセットを実行
+            await resetTimingsIfDateChanged(supplement.id);
+          }
+          return supplement;
+        });
+
+        Promise.all(updatedData).then((result) => {
+          setSupplements(result);
+        });
+      });
     }
+  }, [user]);
+
+  // 定期的に日付をチェックして変更があればリロード
+  useEffect(() => {
+    if (!user) return;
+
+    let lastCheckedDate = getCurrentDate();
+
+    const checkDateInterval = setInterval(() => {
+      const currentDate = getCurrentDate();
+      if (currentDate !== lastCheckedDate) {
+        // 日付が変わったらデータを再取得
+        getSupplements().then((data) => {
+          const updatedData = data.map(async (supplement) => {
+            // リセット処理を実行
+            await resetTimingsIfDateChanged(supplement.id);
+            return {
+              ...supplement,
+              takenTimings: {
+                morning: false,
+                noon: false,
+                night: false,
+              },
+            };
+          });
+
+          Promise.all(updatedData).then((result) => {
+            setSupplements(result);
+            lastCheckedDate = currentDate;
+          });
+        });
+      }
+    }, 60000); // 1分ごとにチェック
+
+    return () => clearInterval(checkDateInterval);
   }, [user]);
 
   const handleLogout = async () => {
