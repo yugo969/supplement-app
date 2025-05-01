@@ -121,5 +121,64 @@ alwaysApply: true
 ---
 
 # project-overview.yaml
+プロジェクト作業の前に必ずdocs/project-overview.yamlを確認し、プロジェクトの全体像を把握してください。このファイルにはプロジェクト構造、機能一覧、技術スタックなどの重要情報が含まれています。
+
+作業開始前のチェックリスト：
+1. docs/project-overview.yamlを読み、プロジェクト構造と既存機能を理解する
+2. 実装予定の機能が既存機能と重複していないか確認する
+3. 技術スタックとバージョンの制約を確認する
+
 このプロジェクトでは、コード変更後に docs/project-overview.yaml を最新状態に更新してください。
 変更点を説明し、YAMLファイルに必要な更新を提案してください。
+
+問題解決が困難な場合のトラブルシューティング：
+- 原因が不明確な問題に直面した場合は、project-overview.yamlの記述と実際のコードベースの一致を確認してください
+- 不一致を発見した場合は、その差異を記録し、問題解決後にドキュメントを更新してください
+
+---
+
+# CSSコーディングガイドライン
+
+## ベンダープレフィックス
+
+CSSでベンダープレフィックスを使用する場合は、必ず標準プロパティも併記してください。
+以下の原則に従ってください：
+
+1. ベンダープレフィックスを使用する場合、必ず標準プロパティも定義する
+2. ベンダープレフィックスを先に記述し、その後に標準プロパティを記述する
+3. 値が同じ場合でも両方のプロパティを記述する
+
+### 良い例
+
+```css
+.element {
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+```
+
+### 悪い例
+
+```css
+.element {
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+```
+
+この対応により、異なるブラウザエンジンでの互換性を確保し、「Also define the standard property 'X' for compatibility」といったエラーを防ぐことができます。
+
+よく使われるベンダープレフィックスと対応する標準プロパティ：
+
+- `-webkit-mask` → `mask`
+- `-webkit-transform` → `transform`
+- `-webkit-transition` → `transition`
+- `-webkit-animation` → `animation`
+- `-webkit-filter` → `filter`
+- `-webkit-appearance` → `appearance`
+- `-webkit-backdrop-filter` → `backdrop-filter`
+- `-moz-appearance` → `appearance`
+- `-ms-grid` → `grid`
