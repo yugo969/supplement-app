@@ -30,13 +30,13 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
           animate={{
             y: checked ? "0%" : "100%",
           }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
+          transition={{ duration: 0.25, ease: "easeInOut" }}
         />
 
         {/* テキスト */}
         <span
           className={cn(
-            "relative z-10 transition-colors duration-300",
+            "relative z-10 transition-colors duration-200",
             checked ? "text-white" : "text-orange-600"
           )}
         >
