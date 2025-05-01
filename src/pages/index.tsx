@@ -44,6 +44,14 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
+import {
+  AnimatedCard,
+  AnimatedCardHeader,
+  AnimatedCardContent,
+  AnimatedCardFooter,
+} from "@/components/ui/animated-card";
+import AnimatedFeedback from "@/components/AnimatedFeedback";
+import { AnimatedButton } from "@/components/ui/animated-button";
 
 type FormData = {
   supplement_name: string;
@@ -84,13 +92,19 @@ export default function Home() {
   const [selectedSupplement, setSelectedSupplement] = useState<null | any>(
     null
   );
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackTimingId, setFeedbackTimingId] = useState<string | null>(null);
+  const [animatingIds, setAnimatingIds] = useState<string[]>([]);
 
   const { showNotification } = useNotification();
 
-  // 服用タイミングのボタンを押したときの処理
   const handleTakeDose = async (supplementId: string, timing: string) => {
     const supplement = supplements.find((s) => s.id === supplementId);
     if (!supplement) return;
+
+    const timingId = `${supplementId}-${timing}`;
+
+    if (animatingIds.includes(timingId)) return;
 
     const currentTakenTimings = supplement.takenTimings || {
       morning: false,
@@ -100,27 +114,67 @@ export default function Home() {
 
     const timingKey = timing as keyof typeof currentTakenTimings;
 
-    // トグル状態の変更
-    currentTakenTimings[timingKey] = !currentTakenTimings[timingKey];
+    if (!currentTakenTimings[timingKey]) {
+      setShowFeedback(false);
 
-    // 内容量の計算
+      setTimeout(() => {
+        setAnimatingIds((prev) => [...prev, timingId]);
+        setFeedbackTimingId(timingId);
+        setShowFeedback(true);
+      }, 10);
+    } else {
+      handleUpdateSupplementTiming(supplementId, timing, false);
+    }
+  };
+
+  const handleFeedbackComplete = () => {
+    if (!feedbackTimingId) return;
+
+    setShowFeedback(false);
+
+    const [supplementId, timing] = feedbackTimingId.split("-");
+
+    const timingIdCopy = feedbackTimingId;
+    setFeedbackTimingId(null);
+
+    setTimeout(() => {
+      handleUpdateSupplementTiming(supplementId, timing, true);
+
+      setAnimatingIds((prev) => prev.filter((id) => id !== timingIdCopy));
+    }, 50);
+  };
+
+  const handleUpdateSupplementTiming = async (
+    supplementId: string,
+    timing: string,
+    isTaking: boolean
+  ) => {
+    const supplement = supplements.find((s) => s.id === supplementId);
+    if (!supplement) return;
+
+    const currentTakenTimings = {
+      ...(supplement.takenTimings || {
+        morning: false,
+        noon: false,
+        night: false,
+      }),
+    };
+
+    const timingKey = timing as keyof typeof currentTakenTimings;
+
+    currentTakenTimings[timingKey] = isTaking;
+
     let newDosage = supplement.dosage;
-
-    if (currentTakenTimings[timingKey]) {
-      // 服用した場合、内容量を減らす
+    if (isTaking) {
       newDosage -= supplement.intake_amount;
     } else {
-      // 取り消した場合、内容量を戻す
       newDosage += supplement.intake_amount;
     }
 
-    // 内容量が負の数にならないようにチェック
     if (newDosage < 0) newDosage = 0;
 
-    // Firebaseを更新
     await updateSupplementDosage(supplementId, newDosage, currentTakenTimings);
 
-    // ローカルの状態を更新
     setSupplements((prevSupplements) =>
       prevSupplements.map((s) =>
         s.id === supplementId
@@ -150,9 +204,9 @@ export default function Home() {
       imageUrl = await uploadImage(data.image[0]);
     }
 
-    const supplementData = { ...data, dosage, intake_amount, imageUrl }; // 画像のURLを含むデータを作成
+    const supplementData = { ...data, dosage, intake_amount, imageUrl };
     if ("image" in supplementData) {
-      delete supplementData.image; // imageキーを削除
+      delete supplementData.image;
     }
 
     if (selectedSupplement) {
@@ -185,7 +239,6 @@ export default function Home() {
     setSelectedSupplement(supplement);
     setIsModalOpen(true);
 
-    // 選択されたサプリの情報をフォームにセット
     setValue("supplement_name", supplement.supplement_name);
     setValue("dosage", supplement.dosage);
     setValue("dosage_unit", supplement.dosage_unit);
@@ -194,7 +247,6 @@ export default function Home() {
     setValue("timing_morning", supplement.timing_morning);
     setValue("timing_noon", supplement.timing_noon);
     setValue("timing_night", supplement.timing_night);
-    // すでに登録されている画像URLをuploadedImageに設定
     setUploadedImage(supplement.imageUrl);
   };
 
@@ -230,7 +282,6 @@ export default function Home() {
     });
   };
 
-  // サプリメント画像の操作
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -253,7 +304,6 @@ export default function Home() {
     setUploadedImage(null);
   };
 
-  // const user = firebase.auth().currentUser;
   if (user) {
     console.log("ユーザーは認証されています");
   } else {
@@ -312,9 +362,9 @@ export default function Home() {
             aria-label="サプリメント一覧"
           >
             {supplements.map((supplement) => (
-              <Card
+              <AnimatedCard
                 key={supplement.id}
-                className="w-full max-w-[356px] overflow-hidden border-2 border-white bg-zinc-50 shadow-slate-300"
+                className="w-full max-w-[356px] overflow-hidden border-2 border-white bg-zinc-50 shadow-slate-300 animated-card"
                 tabIndex={0}
               >
                 <div className="relative w-full h-auto aspect-[3/2]">
@@ -335,15 +385,15 @@ export default function Home() {
                   )}
                 </div>
 
-                <CardHeader className="p-0">
+                <AnimatedCardHeader className="p-0">
                   <div className="text-center break-all">
                     <h2 className="py-1 px-4 bg-gray-700 text-bold text-16px text-white rounded-b-[40px]">
                       {supplement.supplement_name}
                     </h2>
                   </div>
-                </CardHeader>
+                </AnimatedCardHeader>
 
-                <CardContent className="flex flex-col gap-4 py-3 px-4">
+                <AnimatedCardContent className="flex flex-col gap-4 py-3 px-4">
                   <div className="flex flex-row flex-wrap gap-5">
                     <div className="">
                       <div className="flex border-b-2">
@@ -378,17 +428,16 @@ export default function Home() {
                     </span>
                     <div className="p-2 flex flex-wrap gap-2 md:text-xs text-base text-black-950 font-regular">
                       {supplement.timing_morning && (
-                        <Button
+                        <AnimatedButton
+                          id={`${supplement.id}-morning`}
                           onClick={() =>
                             handleTakeDose(supplement.id, "morning")
                           }
-                          variant="outline"
-                          size="sm"
-                          className={`rounded-full ${
-                            supplement.takenTimings?.morning
-                              ? "bg-gradient-to-tr from-cyan-400 to-orange-400 text-white border-0"
-                              : "border-orange-400 text-orange-600"
-                          }`}
+                          disabled={animatingIds.includes(
+                            `${supplement.id}-morning`
+                          )}
+                          checked={supplement.takenTimings?.morning || false}
+                          label="朝"
                           aria-label={`朝 ${
                             supplement.takenTimings?.morning
                               ? "服用済み"
@@ -397,56 +446,48 @@ export default function Home() {
                           aria-pressed={
                             supplement.takenTimings?.morning || false
                           }
-                        >
-                          朝 {supplement.takenTimings?.morning ? "✔" : ""}
-                        </Button>
+                        />
                       )}
 
                       {supplement.timing_noon && (
-                        <Button
+                        <AnimatedButton
+                          id={`${supplement.id}-noon`}
                           onClick={() => handleTakeDose(supplement.id, "noon")}
-                          variant="outline"
-                          size="sm"
-                          className={`rounded-full ${
-                            supplement.takenTimings?.noon
-                              ? "bg-orange-400 text-white border-0"
-                              : "border-orange-400 text-orange-600"
-                          }`}
+                          disabled={animatingIds.includes(
+                            `${supplement.id}-noon`
+                          )}
+                          checked={supplement.takenTimings?.noon || false}
+                          label="昼"
                           aria-label={`昼 ${
                             supplement.takenTimings?.noon
                               ? "服用済み"
                               : "未服用"
                           }`}
                           aria-pressed={supplement.takenTimings?.noon || false}
-                        >
-                          昼 {supplement.takenTimings?.noon ? "✔" : ""}
-                        </Button>
+                        />
                       )}
                       {supplement.timing_night && (
-                        <Button
+                        <AnimatedButton
+                          id={`${supplement.id}-night`}
                           onClick={() => handleTakeDose(supplement.id, "night")}
-                          variant="outline"
-                          size="sm"
-                          className={`rounded-full ${
-                            supplement.takenTimings?.night
-                              ? "bg-gradient-to-bl from-cyan-400 to-orange-400 text-white border-0"
-                              : "border-orange-400 text-orange-600"
-                          }`}
+                          disabled={animatingIds.includes(
+                            `${supplement.id}-night`
+                          )}
+                          checked={supplement.takenTimings?.night || false}
+                          label="夜"
                           aria-label={`夜 ${
                             supplement.takenTimings?.night
                               ? "服用済み"
                               : "未服用"
                           }`}
                           aria-pressed={supplement.takenTimings?.night || false}
-                        >
-                          夜 {supplement.takenTimings?.night ? "✔" : ""}
-                        </Button>
+                        />
                       )}
                     </div>
                   </div>
-                </CardContent>
+                </AnimatedCardContent>
 
-                <CardFooter className="justify-end p-2 gap-3">
+                <AnimatedCardFooter className="justify-end p-2 gap-3">
                   <Button
                     variant="outline"
                     size="sm"
@@ -465,8 +506,8 @@ export default function Home() {
                   >
                     削除
                   </Button>
-                </CardFooter>
-              </Card>
+                </AnimatedCardFooter>
+              </AnimatedCard>
             ))}
           </section>
         </div>
@@ -682,6 +723,12 @@ export default function Home() {
           </DialogContent>
         </Dialog>
       )}
+
+      <AnimatedFeedback
+        isVisible={showFeedback}
+        timingId={feedbackTimingId}
+        onAnimationComplete={handleFeedbackComplete}
+      />
     </div>
   );
 }
