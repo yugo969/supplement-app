@@ -45,15 +45,15 @@ const SignupPage: React.FC = () => {
           </h1>
           <div className="flex flex-col grow">
             <label
-              htmlFor="email"
+              htmlFor="email-field"
               className="flex w-full text-sm text-gray-800 sm:text-base mb-1"
             >
               メールアドレス:
             </label>
             <input
-              id="email"
+              id="email-field"
               type="email"
-              className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring-2 focus:ring-offset-2"
+              className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-gray-400 transition duration-100 focus:ring-2 focus:ring-offset-2"
               {...register("email", {
                 required: "メールアドレスを入力してください",
               })}
@@ -68,15 +68,15 @@ const SignupPage: React.FC = () => {
           </div>
           <div className="flex flex-col grow">
             <label
-              htmlFor="password"
+              htmlFor="password-field"
               className="flex w-full text-sm text-gray-800 sm:text-base mb-1"
             >
               パスワード:
             </label>
             <input
-              id="password"
+              id="password-field"
               type="password"
-              className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-indigo-300 transition duration-100 focus:ring-2 focus:ring-offset-2"
+              className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-gray-400 transition duration-100 focus:ring-2 focus:ring-offset-2"
               {...register("password", {
                 required: "パスワードを入力してください",
               })}
@@ -94,7 +94,7 @@ const SignupPage: React.FC = () => {
           </div>
           <button
             type="submit"
-            className="py-3 px-8 text-white text-sm leading-tight font-semibold rounded-lg bg-gray-800 transition duration-100 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 active:bg-gray-600 md:text-base"
+            className="py-3 px-8 text-white text-sm leading-tight font-semibold rounded-lg bg-gray-800 transition duration-100 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 active:bg-gray-600 md:text-base"
           >
             アカウントを作成
           </button>
@@ -104,7 +104,7 @@ const SignupPage: React.FC = () => {
             すでにアカウントをお持ちですか？{" "}
             <Link
               href="/login"
-              className="py-1 px-1 text-xs text-indigo-500 transition duration-100 hover:text-indigo-600 active:text-indigo-700 border-b border-orange-300 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 rounded"
+              className="py-1 px-1 text-xs text-gray-600 transition duration-100 hover:text-gray-800 active:text-gray-900 border-b border-gray-300 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-500 rounded"
             >
               ログイン
             </Link>

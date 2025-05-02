@@ -31,6 +31,9 @@ import {
   MdDinnerDining,
   MdBed,
   MdNoFood,
+  MdInfoOutline,
+  MdExpandMore,
+  MdExpandLess,
 } from "react-icons/md";
 import resizeImage from "@/lib/resizeImage";
 import { useNotification } from "@/lib/useNotification";
@@ -56,6 +59,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import {
   AnimatedCard,
@@ -65,6 +69,14 @@ import {
 } from "@/components/ui/animated-card";
 import AnimatedFeedback from "@/components/AnimatedFeedback";
 import { AnimatedButton } from "@/components/ui/animated-button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import RecommendedIntakeInfo from "@/components/RecommendedIntakeInfo";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 type DosageMethod = "timing" | "count";
 
@@ -144,6 +156,7 @@ export default function Home() {
     formState: { errors },
     setValue,
     reset,
+    watch,
   } = methods;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [supplements, setSupplements] = useState<any[]>([]);
@@ -201,6 +214,14 @@ export default function Home() {
     timing: string,
     isTaking: boolean
   ) => {
+    // 食事関連のタイミングは服用記録として処理しない
+    if (
+      ["before_meal", "after_meal", "empty_stomach", "bedtime"].includes(timing)
+    ) {
+      console.log("食事関連のタイミングは服用記録として処理しません:", timing);
+      return;
+    }
+
     const supplement = supplements.find((s) => s.id === supplementId);
     if (!supplement) return;
 
@@ -431,6 +452,7 @@ export default function Home() {
     setSelectedUnit("錠");
     setSelectedDosageMethod("timing");
     setUploadedImage("");
+    setShowInfoDetails(false);
   };
 
   const handleAddOrUpdateSupplement = async (data: FormData) => {
@@ -441,7 +463,14 @@ export default function Home() {
       imageUrl = await uploadImage(data.image[0]);
     }
 
-    const supplementData = { ...data, dosage, intake_amount, imageUrl };
+    // dosage_methodがundefinedの場合は'timing'をデフォルト値として使用
+    const supplementData = {
+      ...data,
+      dosage,
+      intake_amount,
+      imageUrl,
+      dosage_method: data.dosage_method || "timing",
+    };
     if ("image" in supplementData) {
       delete supplementData.image;
     }
@@ -456,6 +485,7 @@ export default function Home() {
           morning: false,
           noon: false,
           night: false,
+          // 食事関連のタイミングは推奨情報として扱うため、服用記録からは除外
           before_meal: false,
           after_meal: false,
           empty_stomach: false,
@@ -751,11 +781,7 @@ export default function Home() {
     }
   };
 
-  if (user) {
-    console.log("ユーザーは認証されています");
-  } else {
-    console.log("ユーザーは認証されていません");
-  }
+  const [showInfoDetails, setShowInfoDetails] = useState(false);
 
   if (loading) {
     return <p>ロード中...</p>;
@@ -769,7 +795,7 @@ export default function Home() {
     >
       <main className="relative">
         <Button
-          className="fixed bottom-6 right-4 z-10 md:hidden rounded-full bg-orange-400 hover:bg-orange-500 p-0 w-16 h-16 shadow-lg shadow-slate-500"
+          className="fixed bottom-6 right-4 z-10 md:hidden rounded-full bg-gray-700 hover:bg-gray-800 p-0 w-16 h-16 shadow-lg shadow-slate-500"
           onClick={() => setIsModalOpen(true)}
           size="icon"
           aria-label="サプリを追加"
@@ -785,7 +811,7 @@ export default function Home() {
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                className="text-orange-400 border-orange-400 font-semibold hover:bg-orange-100 shadow-sm max-md:hidden"
+                className="text-gray-700 border-gray-500 font-semibold hover:bg-gray-100 shadow-sm max-md:hidden"
                 onClick={() => setIsModalOpen(true)}
                 aria-label="サプリを追加"
               >
@@ -981,147 +1007,16 @@ export default function Home() {
                           </div>
                         )}
 
-                        {/* 食事関連のタイミング */}
-                        {(supplement.timing_before_meal ||
-                          supplement.timing_after_meal ||
-                          supplement.timing_empty_stomach ||
-                          supplement.timing_bedtime) && (
-                          <div className="flex flex-wrap gap-2">
-                            {supplement.timing_before_meal && (
-                              <AnimatedButton
-                                id={`${supplement.id}-before_meal`}
-                                onClick={() =>
-                                  handleTakeDose(supplement.id, "before_meal")
-                                }
-                                disabled={
-                                  showFeedback ||
-                                  animatingIds.includes(
-                                    `${supplement.id}-before_meal`
-                                  ) ||
-                                  (!supplement.takenTimings?.before_meal &&
-                                    ((supplement.dosage_left ??
-                                      supplement.dosage) <= 0 ||
-                                      (supplement.dosage_left ??
-                                        supplement.dosage) <
-                                        supplement.intake_amount))
-                                }
-                                checked={
-                                  supplement.takenTimings?.before_meal || false
-                                }
-                                label={TIMING_ICONS.before_meal}
-                                aria-label={`${TIMING_LABELS.before_meal} ${
-                                  supplement.takenTimings?.before_meal
-                                    ? "服用済み"
-                                    : "未服用"
-                                }`}
-                                aria-pressed={
-                                  supplement.takenTimings?.before_meal || false
-                                }
-                              />
-                            )}
-
-                            {supplement.timing_after_meal && (
-                              <AnimatedButton
-                                id={`${supplement.id}-after_meal`}
-                                onClick={() =>
-                                  handleTakeDose(supplement.id, "after_meal")
-                                }
-                                disabled={
-                                  showFeedback ||
-                                  animatingIds.includes(
-                                    `${supplement.id}-after_meal`
-                                  ) ||
-                                  (!supplement.takenTimings?.after_meal &&
-                                    ((supplement.dosage_left ??
-                                      supplement.dosage) <= 0 ||
-                                      (supplement.dosage_left ??
-                                        supplement.dosage) <
-                                        supplement.intake_amount))
-                                }
-                                checked={
-                                  supplement.takenTimings?.after_meal || false
-                                }
-                                label={TIMING_ICONS.after_meal}
-                                aria-label={`${TIMING_LABELS.after_meal} ${
-                                  supplement.takenTimings?.after_meal
-                                    ? "服用済み"
-                                    : "未服用"
-                                }`}
-                                aria-pressed={
-                                  supplement.takenTimings?.after_meal || false
-                                }
-                              />
-                            )}
-
-                            {supplement.timing_empty_stomach && (
-                              <AnimatedButton
-                                id={`${supplement.id}-empty_stomach`}
-                                onClick={() =>
-                                  handleTakeDose(supplement.id, "empty_stomach")
-                                }
-                                disabled={
-                                  showFeedback ||
-                                  animatingIds.includes(
-                                    `${supplement.id}-empty_stomach`
-                                  ) ||
-                                  (!supplement.takenTimings?.empty_stomach &&
-                                    ((supplement.dosage_left ??
-                                      supplement.dosage) <= 0 ||
-                                      (supplement.dosage_left ??
-                                        supplement.dosage) <
-                                        supplement.intake_amount))
-                                }
-                                checked={
-                                  supplement.takenTimings?.empty_stomach ||
-                                  false
-                                }
-                                label={TIMING_ICONS.empty_stomach}
-                                aria-label={`${TIMING_LABELS.empty_stomach} ${
-                                  supplement.takenTimings?.empty_stomach
-                                    ? "服用済み"
-                                    : "未服用"
-                                }`}
-                                aria-pressed={
-                                  supplement.takenTimings?.empty_stomach ||
-                                  false
-                                }
-                              />
-                            )}
-
-                            {supplement.timing_bedtime && (
-                              <AnimatedButton
-                                id={`${supplement.id}-bedtime`}
-                                onClick={() =>
-                                  handleTakeDose(supplement.id, "bedtime")
-                                }
-                                disabled={
-                                  showFeedback ||
-                                  animatingIds.includes(
-                                    `${supplement.id}-bedtime`
-                                  ) ||
-                                  (!supplement.takenTimings?.bedtime &&
-                                    ((supplement.dosage_left ??
-                                      supplement.dosage) <= 0 ||
-                                      (supplement.dosage_left ??
-                                        supplement.dosage) <
-                                        supplement.intake_amount))
-                                }
-                                checked={
-                                  supplement.takenTimings?.bedtime || false
-                                }
-                                label={TIMING_ICONS.bedtime}
-                                aria-label={`${TIMING_LABELS.bedtime} ${
-                                  supplement.takenTimings?.bedtime
-                                    ? "服用済み"
-                                    : "未服用"
-                                }`}
-                                aria-pressed={
-                                  supplement.takenTimings?.bedtime || false
-                                }
-                              />
-                            )}
-                          </div>
-                        )}
+                        {/* 食事関連のタイミングをテキスト表示に変更 */}
+                        <RecommendedIntakeInfo
+                          timings={{
+                            before_meal: supplement.timing_before_meal || false,
+                            after_meal: supplement.timing_after_meal || false,
+                            empty_stomach:
+                              supplement.timing_empty_stomach || false,
+                            bedtime: supplement.timing_bedtime || false,
+                          }}
+                        />
                       </div>
                     ) : (
                       <div className="p-1 flex flex-col gap-2">
@@ -1197,7 +1092,6 @@ export default function Home() {
                                 if (e.shiftKey) return;
 
                                 // ホイールイベントを横スクロールに変換
-                                e.preventDefault();
                                 const container = e.currentTarget;
 
                                 // スクロール速度を調整（deltaModifier）
@@ -1305,12 +1199,23 @@ export default function Home() {
                               {supplement.daily_target_count} 回
                             </div>
                           )}
+
+                        {/* 回数ベースでも推奨服用方法を表示 */}
+                        <RecommendedIntakeInfo
+                          timings={{
+                            before_meal: supplement.timing_before_meal || false,
+                            after_meal: supplement.timing_after_meal || false,
+                            empty_stomach:
+                              supplement.timing_empty_stomach || false,
+                            bedtime: supplement.timing_bedtime || false,
+                          }}
+                        />
                       </div>
                     )}
                   </div>
                 </AnimatedCardContent>
 
-                <AnimatedCardFooter className="justify-end p-1 gap-2">
+                <AnimatedCardFooter className="justify-end p-2 pt-0 gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -1323,7 +1228,7 @@ export default function Home() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="border-b border-gray-500 text-gray-700 rounded-none py-1 px-2 text-xs h-auto"
+                    className="border-b border-gray-500 text-gray-700 rounded-none p-1 text-xs h-auto"
                     onClick={() => handleDeleteSupplement(supplement.id)}
                     aria-label={`${supplement.supplement_name}を削除`}
                   >
@@ -1343,6 +1248,7 @@ export default function Home() {
               setIsModalOpen(false);
               setSelectedSupplement(null);
               resetForm();
+              setShowInfoDetails(false);
             }
           }}
         >
@@ -1368,10 +1274,14 @@ export default function Home() {
               >
                 <div className="group relative w-full aspect-[3/2] rounded-md bg-gray-200">
                   {!uploadedImage ? (
-                    <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer">
+                    <label
+                      htmlFor="supplement_image"
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer"
+                    >
                       <MdAddAPhoto size={64} aria-hidden="true" />
                       <span className="text-[16px]">画像追加</span>
                       <input
+                        id="supplement_image"
                         type="file"
                         {...register("image")}
                         onChange={handleImageChange}
@@ -1402,26 +1312,29 @@ export default function Home() {
                   )}
                 </div>
 
-                <FormField
-                  name="supplement_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="supplement_name">サプリ名</FormLabel>
-                      <FormControl>
-                        <Input
-                          id="supplement_name"
-                          {...register("supplement_name", {
-                            required: "サプリ名は必須です",
-                          })}
-                          aria-required="true"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
+                <div>
                   <FormField
+                    control={methods.control}
+                    name="supplement_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel htmlFor="supplement_name">
+                          サプリ名
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            id="supplement_name"
+                            placeholder="サプリメント名を入力"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={methods.control}
                     name="dosage"
                     render={({ field }) => (
                       <FormItem>
@@ -1431,28 +1344,13 @@ export default function Home() {
                             id="dosage"
                             type="number"
                             className="rounded-r-none"
-                            {...register("dosage", {
-                              required: "内容量は必須です",
-                              valueAsNumber: true,
-                              validate: {
-                                isNumber: (value) =>
-                                  (!isNaN(value) &&
-                                    /^\d*\.?\d*$/.test(String(value))) ||
-                                  "数値のみ入力可能です",
-                              },
-                              min: {
-                                value: 0,
-                                message: "0以上の値を入力してください",
-                              },
-                            })}
-                            aria-label="内容量の数値"
-                            aria-required="true"
-                            onKeyDown={(e) => {
-                              // アルファベットキーの入力を防止
-                              if (/^[a-zA-Z]$/.test(e.key)) {
-                                e.preventDefault();
-                              }
+                            {...field}
+                            onChange={(e) => {
+                              const value = parseFloat(e.target.value);
+                              field.onChange(value);
                             }}
+                            aria-label="サプリメント全体の内容量の数値"
+                            aria-required="true"
                           />
                           <select
                             id="dosage_unit"
@@ -1493,28 +1391,9 @@ export default function Home() {
                             id="intake_amount"
                             type="number"
                             className="rounded-r-none"
-                            {...register("intake_amount", {
-                              required: "服用量は必須です",
-                              valueAsNumber: true,
-                              validate: {
-                                isNumber: (value) =>
-                                  (!isNaN(value) &&
-                                    /^\d*\.?\d*$/.test(String(value))) ||
-                                  "数値のみ入力可能です",
-                              },
-                              min: {
-                                value: 0,
-                                message: "0以上の値を入力してください",
-                              },
-                            })}
+                            {...field}
                             aria-label="一回の服用量の数値"
                             aria-required="true"
-                            onKeyDown={(e) => {
-                              // アルファベットキーの入力を防止
-                              if (/^[a-zA-Z]$/.test(e.key)) {
-                                e.preventDefault();
-                              }
-                            }}
                           />
                           <select
                             id="intake_unit"
@@ -1549,146 +1428,71 @@ export default function Home() {
                   name="dosage_method"
                   render={({ field }) => (
                     <FormItem className="space-y-3">
-                      <FormLabel>服用管理方法</FormLabel>
-                      <div className="flex flex-col space-y-2">
+                      <FormLabel id="dosage_method_label">
+                        服用管理方法
+                      </FormLabel>
+                      <RadioGroup
+                        id="dosage_method_group"
+                        value={field.value}
+                        onValueChange={(value) => {
+                          setSelectedDosageMethod(value as DosageMethod);
+                          field.onChange(value);
+                        }}
+                        className="flex flex-col space-y-2"
+                        aria-labelledby="dosage_method_label"
+                      >
                         <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="timing_method"
-                            value="timing"
-                            checked={selectedDosageMethod === "timing"}
-                            onChange={(e) => {
-                              setSelectedDosageMethod("timing");
-                              field.onChange(e);
-                            }}
-                            className="w-4 h-4 accent-orange-400"
-                          />
+                          <RadioGroupItem value="timing" id="timing_method" />
                           <Label htmlFor="timing_method">
                             タイミングベース（朝・昼・夜など）
                           </Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="count_method"
-                            value="count"
-                            checked={selectedDosageMethod === "count"}
-                            onChange={(e) => {
-                              setSelectedDosageMethod("count");
-                              field.onChange(e);
-                            }}
-                            className="w-4 h-4 accent-orange-400"
-                          />
+                          <RadioGroupItem value="count" id="count_method" />
                           <Label htmlFor="count_method">
                             回数ベース（1日の服用回数）
                           </Label>
                         </div>
-                      </div>
+                      </RadioGroup>
                     </FormItem>
                   )}
                 />
 
-                {selectedDosageMethod === "timing" && (
-                  <>
-                    <FormItem role="group" aria-labelledby="timing-label">
-                      <FormLabel id="timing-label">時間帯</FormLabel>
-                      <div className="flex flex-wrap gap-5 pt-2">
-                        <Label
-                          htmlFor="timing_morning"
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <input
-                            id="timing_morning"
-                            className="w-4 h-4 rounded accent-orange-400"
-                            type="checkbox"
-                            {...register("timing_morning")}
-                          />
-                          朝
-                        </Label>
-                        <Label
-                          htmlFor="timing_noon"
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <input
-                            id="timing_noon"
-                            className="w-4 h-4 rounded accent-orange-400"
-                            type="checkbox"
-                            {...register("timing_noon")}
-                          />
-                          昼
-                        </Label>
-                        <Label
-                          htmlFor="timing_night"
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <input
-                            id="timing_night"
-                            className="w-4 h-4 rounded accent-orange-400"
-                            type="checkbox"
-                            {...register("timing_night")}
-                          />
-                          夜
-                        </Label>
+                {selectedDosageMethod === "timing" ? (
+                  <FormItem>
+                    <FormLabel id="timing_group_label" htmlFor="timing_group">
+                      時間帯
+                    </FormLabel>
+                    <div
+                      id="timing_group"
+                      className="flex flex-wrap gap-5 pt-2"
+                      role="group"
+                      aria-labelledby="timing_group_label"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="timing_morning"
+                          {...register("timing_morning")}
+                        />
+                        <Label htmlFor="timing_morning">朝</Label>
                       </div>
-                    </FormItem>
-
-                    <FormItem role="group" aria-labelledby="meal-label">
-                      <FormLabel id="meal-label">食事関連</FormLabel>
-                      <div className="flex flex-wrap gap-5 pt-2">
-                        <Label
-                          htmlFor="timing_before_meal"
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <input
-                            id="timing_before_meal"
-                            className="w-4 h-4 rounded accent-orange-400"
-                            type="checkbox"
-                            {...register("timing_before_meal")}
-                          />
-                          食前
-                        </Label>
-                        <Label
-                          htmlFor="timing_after_meal"
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <input
-                            id="timing_after_meal"
-                            className="w-4 h-4 rounded accent-orange-400"
-                            type="checkbox"
-                            {...register("timing_after_meal")}
-                          />
-                          食後
-                        </Label>
-                        <Label
-                          htmlFor="timing_empty_stomach"
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <input
-                            id="timing_empty_stomach"
-                            className="w-4 h-4 rounded accent-orange-400"
-                            type="checkbox"
-                            {...register("timing_empty_stomach")}
-                          />
-                          空腹時
-                        </Label>
-                        <Label
-                          htmlFor="timing_bedtime"
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <input
-                            id="timing_bedtime"
-                            className="w-4 h-4 rounded accent-orange-400"
-                            type="checkbox"
-                            {...register("timing_bedtime")}
-                          />
-                          就寝前
-                        </Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="timing_noon"
+                          {...register("timing_noon")}
+                        />
+                        <Label htmlFor="timing_noon">昼</Label>
                       </div>
-                    </FormItem>
-                  </>
-                )}
-
-                {selectedDosageMethod === "count" && (
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="timing_night"
+                          {...register("timing_night")}
+                        />
+                        <Label htmlFor="timing_night">夜</Label>
+                      </div>
+                    </div>
+                  </FormItem>
+                ) : (
                   <FormField
                     control={methods.control}
                     name="daily_target_count"
@@ -1713,10 +1517,132 @@ export default function Home() {
                   />
                 )}
 
+                {/* 推奨服用方法は服用管理方法に関わらず表示 */}
+                <FormItem>
+                  <div className="flex items-center">
+                    <FormLabel
+                      id="meal_timing_label"
+                      htmlFor="meal_timing_group"
+                      className="flex items-center"
+                    >
+                      推奨服用方法
+                      <button
+                        type="button"
+                        onClick={() => setShowInfoDetails(!showInfoDetails)}
+                        className="inline-flex items-center text-gray-500 hover:text-gray-700 transition-colors ml-1"
+                        aria-label={
+                          showInfoDetails
+                            ? "詳細情報を閉じる"
+                            : "詳細情報を表示"
+                        }
+                      >
+                        {showInfoDetails ? (
+                          <MdExpandLess size={18} />
+                        ) : (
+                          <MdInfoOutline size={18} />
+                        )}
+                      </button>
+                    </FormLabel>
+                  </div>
+
+                  {showInfoDetails && (
+                    <div className="mt-1 mb-3 p-3 bg-gray-200 border-2 border-gray-200 rounded-md text-xs overflow-y-auto">
+                      <dl className="space-y-3">
+                        <div>
+                          <dt className="font-medium text-gray-700">食前</dt>
+                          <dd className="text-gray-600 ml-4">
+                            食事の前に服用することで、効果的に吸収されます。一般的に食事の30分前が推奨されます。
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-gray-700">食後</dt>
+                          <dd className="text-gray-600 ml-4">
+                            食後に服用することで、胃への刺激を軽減します。食事から30分以内の服用が推奨されます。
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-gray-700">空腹時</dt>
+                          <dd className="text-gray-600 ml-4">
+                            空腹時（食間）に服用することで、より効率的に吸収されます。食事から2時間以上経過した時間帯が最適です。
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="font-medium text-gray-700">就寝前</dt>
+                          <dd className="text-gray-600 ml-4">
+                            就寝前に服用することで、体内での作用時間を最大化します。就寝30分前の服用が推奨されます。
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+                  )}
+
+                  <div
+                    id="meal_timing_group"
+                    className="flex flex-wrap gap-5 pt-2"
+                    role="group"
+                    aria-labelledby="meal_timing_label"
+                  >
+                    {/* 食前・食後の選択肢を排他的にする（ラジオボタン） */}
+                    <div className="w-full mb-1">
+                      <RadioGroup
+                        value={
+                          watch("timing_before_meal")
+                            ? "before_meal"
+                            : watch("timing_after_meal")
+                            ? "after_meal"
+                            : ""
+                        }
+                        onValueChange={(value) => {
+                          setValue(
+                            "timing_before_meal",
+                            value === "before_meal"
+                          );
+                          setValue("timing_after_meal", value === "after_meal");
+                        }}
+                        className="flex gap-5"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value="before_meal"
+                            id="timing_before_meal_radio"
+                          />
+                          <Label htmlFor="timing_before_meal_radio">食前</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value="after_meal"
+                            id="timing_after_meal_radio"
+                          />
+                          <Label htmlFor="timing_after_meal_radio">食後</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="" id="timing_none_radio" />
+                          <Label htmlFor="timing_none_radio">なし</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="timing_empty_stomach"
+                        {...register("timing_empty_stomach")}
+                      />
+                      <Label htmlFor="timing_empty_stomach">空腹時</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="timing_bedtime"
+                        {...register("timing_bedtime")}
+                      />
+                      <Label htmlFor="timing_bedtime">就寝前</Label>
+                    </div>
+                  </div>
+                </FormItem>
+
                 <DialogFooter>
                   <Button
                     type="submit"
-                    className="w-full bg-orange-400 hover:bg-orange-500 text-white"
+                    className="w-full bg-gray-700 hover:bg-gray-800 text-white"
                   >
                     {selectedSupplement ? "編集" : "登録"}
                   </Button>
