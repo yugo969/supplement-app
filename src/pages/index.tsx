@@ -77,6 +77,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 type DosageMethod = "timing" | "count";
 
@@ -85,36 +87,73 @@ type TimingCategory = {
   meal?: "before_meal" | "after_meal" | "empty_stomach" | "bedtime";
 };
 
-type FormData = {
-  supplement_name: string;
-  dosage: number;
-  dosage_unit: string;
-  intake_amount: number;
-  intake_unit: string;
-  dosage_method: DosageMethod; // 服用方法（タイミングベースか回数ベース）
-  timing_morning: boolean;
-  timing_noon: boolean;
-  timing_night: boolean;
-  timing_before_meal: boolean; // 食前
-  timing_after_meal: boolean; // 食後
-  timing_empty_stomach: boolean; // 空腹時
-  timing_bedtime: boolean; // 就寝前
-  daily_target_count?: number; // 1日の目標服用回数
-  image?: FileList;
-  // 服用状況を管理するフィールド
-  takenTimings?: {
-    morning: boolean;
-    noon: boolean;
-    night: boolean;
-    before_meal: boolean;
-    after_meal: boolean;
-    empty_stomach: boolean;
-    bedtime: boolean;
-  };
-  // 回数ベースで使用
-  takenCount?: number;
-  dosageHistory?: { timestamp: string; count: number }[];
-};
+// Zodスキーマの定義
+const supplementSchema = z
+  .object({
+    supplement_name: z.string().min(1, "サプリ名は必須です"),
+    dosage: z
+      .number({
+        required_error: "内容量は必須です",
+        invalid_type_error: "内容量は数値を入力してください",
+      })
+      .positive("内容量は正の数値を入力してください")
+      .int("内容量は整数を入力してください"),
+    dosage_unit: z.string().min(1, "単位は必須です"),
+    intake_amount: z
+      .number({
+        required_error: "服用量は必須です",
+        invalid_type_error: "服用量は数値を入力してください",
+      })
+      .positive("服用量は正の数値を入力してください")
+      .int("服用量は整数を入力してください"),
+    intake_unit: z.string().min(1, "単位は必須です"),
+    dosage_method: z.enum(["timing", "count"]),
+    timing_morning: z.boolean(),
+    timing_noon: z.boolean(),
+    timing_night: z.boolean(),
+    timing_before_meal: z.boolean(),
+    timing_after_meal: z.boolean(),
+    timing_empty_stomach: z.boolean(),
+    timing_bedtime: z.boolean(),
+    daily_target_count: z.number().optional(),
+    image: z.any().optional(),
+    takenTimings: z
+      .object({
+        morning: z.boolean(),
+        noon: z.boolean(),
+        night: z.boolean(),
+        before_meal: z.boolean(),
+        after_meal: z.boolean(),
+        empty_stomach: z.boolean(),
+        bedtime: z.boolean(),
+      })
+      .optional(),
+    takenCount: z.number().optional(),
+    dosageHistory: z
+      .array(
+        z.object({
+          timestamp: z.string(),
+          count: z.number(),
+        })
+      )
+      .optional(),
+  })
+  .refine(
+    (data) => {
+      // タイミングベースの場合、少なくとも1つの時間帯が選択されていることを確認
+      if (data.dosage_method === "timing") {
+        return data.timing_morning || data.timing_noon || data.timing_night;
+      }
+      return true;
+    },
+    {
+      message:
+        "タイミングベースを選択した場合、少なくとも1つの時間帯を選択してください",
+      path: ["dosage_method"], // エラーメッセージの表示場所を変更
+    }
+  );
+
+type FormData = z.infer<typeof supplementSchema>;
 
 type SupplementData = FormData & {
   imageUrl: string;
@@ -149,7 +188,25 @@ const TIMING_LABELS = {
 };
 
 export default function Home() {
-  const methods = useHookForm<FormData>();
+  const methods = useHookForm<FormData>({
+    resolver: zodResolver(supplementSchema),
+    defaultValues: {
+      supplement_name: "",
+      dosage: 1,
+      dosage_unit: "錠",
+      intake_amount: 1,
+      intake_unit: "錠",
+      dosage_method: "timing",
+      timing_morning: false,
+      timing_noon: false,
+      timing_night: false,
+      timing_before_meal: false,
+      timing_after_meal: false,
+      timing_empty_stomach: false,
+      timing_bedtime: false,
+      daily_target_count: 1,
+    },
+  });
   const {
     register,
     handleSubmit,
@@ -435,9 +492,9 @@ export default function Home() {
   const resetForm = () => {
     reset({
       supplement_name: "",
-      dosage: 0,
+      dosage: 1, // 0から1に変更
       dosage_unit: "錠",
-      intake_amount: 0,
+      intake_amount: 1, // 0から1に変更
       intake_unit: "錠",
       dosage_method: "timing",
       timing_morning: false,
@@ -456,6 +513,30 @@ export default function Home() {
   };
 
   const handleAddOrUpdateSupplement = async (data: FormData) => {
+    // タイミングベースを選択している場合に少なくとも1つのチェックボックスが選択されているか確認
+    if (
+      data.dosage_method === "timing" &&
+      !data.timing_morning &&
+      !data.timing_noon &&
+      !data.timing_night
+    ) {
+      // エラーメッセージを表示
+      return;
+    }
+
+    // 内容量と服用量が正の整数であることを確認
+    if (!data.dosage || data.dosage <= 0 || !Number.isInteger(data.dosage)) {
+      return;
+    }
+
+    if (
+      !data.intake_amount ||
+      data.intake_amount <= 0 ||
+      !Number.isInteger(data.intake_amount)
+    ) {
+      return;
+    }
+
     const dosage = Number(data.dosage);
     const intake_amount = Number(data.intake_amount);
     let imageUrl = uploadedImage;
@@ -463,9 +544,21 @@ export default function Home() {
       imageUrl = await uploadImage(data.image[0]);
     }
 
+    // 服用タイミングフィールドが含まれていることを確認
+    const timingFields = {
+      timing_morning: !!data.timing_morning,
+      timing_noon: !!data.timing_noon,
+      timing_night: !!data.timing_night,
+      timing_before_meal: !!data.timing_before_meal,
+      timing_after_meal: !!data.timing_after_meal,
+      timing_empty_stomach: !!data.timing_empty_stomach,
+      timing_bedtime: !!data.timing_bedtime,
+    };
+
     // dosage_methodがundefinedの場合は'timing'をデフォルト値として使用
     const supplementData = {
       ...data,
+      ...timingFields, // タイミングフィールドを明示的に含める
       dosage,
       intake_amount,
       imageUrl,
@@ -1252,11 +1345,19 @@ export default function Home() {
             }
           }}
         >
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto sm:max-w-lg md:max-w-xl">
+          <DialogContent
+            className="max-w-md max-h-[90vh] overflow-y-auto sm:max-w-lg md:max-w-xl"
+            aria-describedby="dialog-description"
+          >
             <DialogHeader>
               <DialogTitle className="text-xl font-semibold text-gray-800">
                 {selectedSupplement ? "サプリ編集" : "サプリ追加"}
               </DialogTitle>
+              <div id="dialog-description" className="sr-only">
+                {selectedSupplement
+                  ? "サプリメントの情報を編集するフォーム"
+                  : "新しいサプリメントを追加するフォーム"}
+              </div>
             </DialogHeader>
 
             <Form {...methods}>
@@ -1346,15 +1447,20 @@ export default function Home() {
                             className="rounded-r-none"
                             {...field}
                             onChange={(e) => {
-                              const value = parseFloat(e.target.value);
+                              const value =
+                                e.target.value === ""
+                                  ? undefined
+                                  : parseFloat(e.target.value);
                               field.onChange(value);
                             }}
                             aria-label="サプリメント全体の内容量の数値"
                             aria-required="true"
+                            min={1}
+                            defaultValue={1}
                           />
                           <select
                             id="dosage_unit"
-                            className="p-2 rounded-r-md border border-input border-l-0 bg-background"
+                            className="p-2 rounded-r-md border border-input border-l-0 bg-background focus:ring-2 focus:ring-gray-500 focus:border-gray-500 focus:outline-none"
                             value={selectedUnit}
                             {...register("dosage_unit", {
                               required: "単位は必須です",
@@ -1368,7 +1474,6 @@ export default function Home() {
                             </option>
                             <option value="錠">錠</option>
                             <option value="粒">粒</option>
-                            <option value="カプセル">カプセル</option>
                             <option value="g">g</option>
                             <option value="mg">mg</option>
                             <option value="ml">ml</option>
@@ -1392,12 +1497,21 @@ export default function Home() {
                             type="number"
                             className="rounded-r-none"
                             {...field}
+                            onChange={(e) => {
+                              const value =
+                                e.target.value === ""
+                                  ? undefined
+                                  : parseFloat(e.target.value);
+                              field.onChange(value);
+                            }}
                             aria-label="一回の服用量の数値"
                             aria-required="true"
+                            min={1}
+                            defaultValue={1}
                           />
                           <select
                             id="intake_unit"
-                            className="p-2 rounded-r-md border border-input border-l-0 bg-background"
+                            className="p-2 rounded-r-md border border-input border-l-0 bg-background focus:ring-2 focus:ring-gray-500 focus:border-gray-500 focus:outline-none"
                             value={selectedUnit}
                             {...register("intake_unit", {
                               required: "単位は必須です",
@@ -1411,7 +1525,6 @@ export default function Home() {
                             </option>
                             <option value="錠">錠</option>
                             <option value="粒">粒</option>
-                            <option value="カプセル">カプセル</option>
                             <option value="g">g</option>
                             <option value="mg">mg</option>
                             <option value="ml">ml</option>
@@ -1470,27 +1583,66 @@ export default function Home() {
                       aria-labelledby="timing_group_label"
                     >
                       <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="timing_morning"
-                          {...register("timing_morning")}
+                        <FormField
+                          control={methods.control}
+                          name="timing_morning"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  id="timing_morning"
+                                />
+                              </FormControl>
+                              <Label htmlFor="timing_morning">朝</Label>
+                            </FormItem>
+                          )}
                         />
-                        <Label htmlFor="timing_morning">朝</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="timing_noon"
-                          {...register("timing_noon")}
+                        <FormField
+                          control={methods.control}
+                          name="timing_noon"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  id="timing_noon"
+                                />
+                              </FormControl>
+                              <Label htmlFor="timing_noon">昼</Label>
+                            </FormItem>
+                          )}
                         />
-                        <Label htmlFor="timing_noon">昼</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="timing_night"
-                          {...register("timing_night")}
+                        <FormField
+                          control={methods.control}
+                          name="timing_night"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <Checkbox
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  id="timing_night"
+                                />
+                              </FormControl>
+                              <Label htmlFor="timing_night">夜</Label>
+                            </FormItem>
+                          )}
                         />
-                        <Label htmlFor="timing_night">夜</Label>
                       </div>
                     </div>
+                    {/* 時間帯が選択されていない場合のエラーメッセージ */}
+                    {errors.dosage_method && (
+                      <p className="text-sm font-medium text-red-500 mt-2">
+                        少なくとも1つの時間帯を選択してください
+                      </p>
+                    )}
                   </FormItem>
                 ) : (
                   <FormField
@@ -1623,18 +1775,40 @@ export default function Home() {
                     </div>
 
                     <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="timing_empty_stomach"
-                        {...register("timing_empty_stomach")}
+                      <FormField
+                        control={methods.control}
+                        name="timing_empty_stomach"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                id="timing_empty_stomach"
+                              />
+                            </FormControl>
+                            <Label htmlFor="timing_empty_stomach">空腹時</Label>
+                          </FormItem>
+                        )}
                       />
-                      <Label htmlFor="timing_empty_stomach">空腹時</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="timing_bedtime"
-                        {...register("timing_bedtime")}
+                      <FormField
+                        control={methods.control}
+                        name="timing_bedtime"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                id="timing_bedtime"
+                              />
+                            </FormControl>
+                            <Label htmlFor="timing_bedtime">就寝前</Label>
+                          </FormItem>
+                        )}
                       />
-                      <Label htmlFor="timing_bedtime">就寝前</Label>
                     </div>
                   </div>
                 </FormItem>
