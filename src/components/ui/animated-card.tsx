@@ -18,7 +18,7 @@ const AnimatedCard = ({ className, children, ...props }: AnimatedCardProps) => {
       whileHover="hover"
       variants={cardHoverVariants}
       className={cn(
-        "rounded-xl border bg-card text-card-foreground shadow focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background",
+        "relative pb-12 rounded-xl border bg-card text-card-foreground shadow focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background",
         className
       )}
       {...props}
@@ -81,7 +81,7 @@ const AnimatedCardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center p-6 pt-0", className)}
+    className={cn("flex items-center pt-0", className)}
     {...props}
   />
 ));
