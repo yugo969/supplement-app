@@ -1215,7 +1215,7 @@ export default function Home() {
                                   }).map((_, index) => (
                                     <div
                                       key={index}
-                                      className="flex-none w-6 h-6 bg-orange-400 text-white rounded-full flex items-center justify-center text-xs font-medium shadow-sm"
+                                      className="flex-none w-6 h-6 bg-gray-700 text-white rounded-full flex items-center justify-center text-xs font-medium shadow-sm"
                                       aria-label={`${index + 1}回目の服用`}
                                     >
                                       {index + 1}
@@ -1308,7 +1308,7 @@ export default function Home() {
                   </div>
                 </AnimatedCardContent>
 
-                <AnimatedCardFooter className="justify-end p-2 pt-0 gap-2">
+                <AnimatedCardFooter className="absolute bottom-3 right-3 gap-2">
                   <Button
                     variant="outline"
                     size="sm"
