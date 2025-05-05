@@ -51,3 +51,4 @@ repomix-output.xml
 # clinerules
 .clinerules
 memory_bank
+.clineignore
