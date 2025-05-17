@@ -1,7 +1,7 @@
 import Image from "next/image";
 import firebase from "@/lib/firebaseClient";
 import { useAuth } from "@/hooks/useAuth";
-import { useForm as useHookForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   addSupplement,
   deleteSupplement,
@@ -78,89 +78,14 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-
-type DosageMethod = "timing" | "count";
-
-type TimingCategory = {
-  time?: "morning" | "noon" | "night";
-  meal?: "before_meal" | "after_meal" | "empty_stomach" | "bedtime";
-};
-
-// Zodスキーマの定義
-const supplementSchema = z
-  .object({
-    supplement_name: z.string().min(1, "サプリ名は必須です"),
-    dosage: z
-      .number({
-        required_error: "内容量は必須です",
-        invalid_type_error: "内容量は数値を入力してください",
-      })
-      .positive("内容量は正の数値を入力してください")
-      .int("内容量は整数を入力してください"),
-    dosage_unit: z.string().min(1, "単位は必須です"),
-    intake_amount: z
-      .number({
-        required_error: "服用量は必須です",
-        invalid_type_error: "服用量は数値を入力してください",
-      })
-      .positive("服用量は正の数値を入力してください")
-      .int("服用量は整数を入力してください"),
-    intake_unit: z.string().min(1, "単位は必須です"),
-    dosage_method: z.enum(["timing", "count"]),
-    timing_morning: z.boolean(),
-    timing_noon: z.boolean(),
-    timing_night: z.boolean(),
-    timing_before_meal: z.boolean(),
-    timing_after_meal: z.boolean(),
-    timing_empty_stomach: z.boolean(),
-    timing_bedtime: z.boolean(),
-    daily_target_count: z.number().optional(),
-    image: z.any().optional(),
-    takenTimings: z
-      .object({
-        morning: z.boolean(),
-        noon: z.boolean(),
-        night: z.boolean(),
-        before_meal: z.boolean(),
-        after_meal: z.boolean(),
-        empty_stomach: z.boolean(),
-        bedtime: z.boolean(),
-      })
-      .optional(),
-    takenCount: z.number().optional(),
-    dosageHistory: z
-      .array(
-        z.object({
-          timestamp: z.string(),
-          count: z.number(),
-        })
-      )
-      .optional(),
-  })
-  .refine(
-    (data) => {
-      // タイミングベースの場合、少なくとも1つの時間帯が選択されていることを確認
-      if (data.dosage_method === "timing") {
-        return data.timing_morning || data.timing_noon || data.timing_night;
-      }
-      return true;
-    },
-    {
-      message:
-        "タイミングベースを選択した場合、少なくとも1つの時間帯を選択してください",
-      path: ["dosage_method"], // エラーメッセージの表示場所を変更
-    }
-  );
-
-type FormData = z.infer<typeof supplementSchema>;
-
-type SupplementData = FormData & {
-  imageUrl: string;
-  dosage_left?: number; // 服用状況更新後の残量
-  lastTakenDate?: string; // 最後に服用した日付
-  shouldResetTimings?: boolean; // 日付変更によるリセットが必要かどうか
-};
+import {
+  SupplementData,
+  DosageMethod,
+  TimingCategory,
+  supplementFormSchema,
+  SupplementFormData,
+} from "@/schemas/supplement";
+import { z } from "zod";
 
 const maxWidth = 552;
 const maxHeight = 366;
@@ -188,8 +113,8 @@ const TIMING_LABELS = {
 };
 
 export default function Home() {
-  const methods = useHookForm<FormData>({
-    resolver: zodResolver(supplementSchema),
+  const methods = useForm<SupplementFormData>({
+    resolver: zodResolver(supplementFormSchema) as any,
     defaultValues: {
       supplement_name: "",
       dosage: 1,
@@ -205,6 +130,7 @@ export default function Home() {
       timing_empty_stomach: false,
       timing_bedtime: false,
       daily_target_count: 1,
+      meal_timing: "none",
     },
   });
   const {
@@ -216,10 +142,9 @@ export default function Home() {
     watch,
   } = methods;
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [supplements, setSupplements] = useState<any[]>([]);
-  const [selectedSupplement, setSelectedSupplement] = useState<null | any>(
-    null
-  );
+  const [supplements, setSupplements] = useState<SupplementData[]>([]);
+  const [selectedSupplement, setSelectedSupplement] =
+    useState<null | SupplementData>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackTimingId, setFeedbackTimingId] = useState<string | null>(null);
   const [animatingIds, setAnimatingIds] = useState<string[]>([]);
@@ -430,8 +355,11 @@ export default function Home() {
             } else {
               // タイミングベースの場合はtakenTimingsをリセット
               if (supplement.takenTimings) {
-                Object.keys(supplement.takenTimings).forEach((key) => {
-                  supplement.takenTimings[key] = false;
+                // 型安全な方法でtakenTimingsを更新
+                const timings = supplement.takenTimings;
+                Object.keys(timings).forEach((key) => {
+                  const timingKey = key as keyof typeof timings;
+                  timings[timingKey] = false;
                 });
               }
             }
@@ -492,9 +420,9 @@ export default function Home() {
   const resetForm = () => {
     reset({
       supplement_name: "",
-      dosage: 1, // 0から1に変更
+      dosage: 1,
       dosage_unit: "錠",
-      intake_amount: 1, // 0から1に変更
+      intake_amount: 1,
       intake_unit: "錠",
       dosage_method: "timing",
       timing_morning: false,
@@ -505,14 +433,14 @@ export default function Home() {
       timing_empty_stomach: false,
       timing_bedtime: false,
       daily_target_count: 1,
+      meal_timing: "none",
     });
     setSelectedUnit("錠");
     setSelectedDosageMethod("timing");
-    setUploadedImage("");
-    setShowInfoDetails(false);
+    setIsModalOpen(false);
   };
 
-  const handleAddOrUpdateSupplement = async (data: FormData) => {
+  const handleAddOrUpdateSupplement = async (data: SupplementFormData) => {
     // タイミングベースを選択している場合に少なくとも1つのチェックボックスが選択されているか確認
     if (
       data.dosage_method === "timing" &&
@@ -520,7 +448,7 @@ export default function Home() {
       !data.timing_noon &&
       !data.timing_night
     ) {
-      // エラーメッセージを表示
+      // エラーメッセージは既にZodスキーマで設定されているので、ここでは何もしない
       return;
     }
 
@@ -601,10 +529,22 @@ export default function Home() {
   };
 
   const handleOpenUpdateModal = (supplement: SupplementData) => {
-    setIsModalOpen(true);
     setSelectedSupplement(supplement);
+    setIsModalOpen(true);
     setSelectedUnit(supplement.dosage_unit);
     setSelectedDosageMethod(supplement.dosage_method || "timing");
+
+    // meal_timingの設定（後方互換性のため）
+    let mealTiming = supplement.meal_timing || "none";
+    if (!supplement.meal_timing) {
+      if (supplement.timing_before_meal) {
+        mealTiming = "before_meal";
+      } else if (supplement.timing_after_meal) {
+        mealTiming = "after_meal";
+      } else if (supplement.timing_empty_stomach) {
+        mealTiming = "empty_stomach";
+      }
+    }
 
     setValue("supplement_name", supplement.supplement_name);
     setValue("dosage", supplement.dosage);
@@ -618,6 +558,12 @@ export default function Home() {
     setValue("timing_after_meal", supplement.timing_after_meal);
     setValue("timing_empty_stomach", supplement.timing_empty_stomach);
     setValue("timing_bedtime", supplement.timing_bedtime);
+    setValue("meal_timing", mealTiming);
+
+    if (supplement.daily_target_count) {
+      setValue("daily_target_count", supplement.daily_target_count);
+    }
+
     setUploadedImage(supplement.imageUrl);
   };
 
@@ -882,7 +828,7 @@ export default function Home() {
 
   return (
     <div
-      className={`relative h-full bg-zinc-200 ${
+      className={`relative min-h-screen bg-zinc-200 ${
         isModalOpen && "overflow-hidden"
       }`}
     >
@@ -1333,6 +1279,7 @@ export default function Home() {
           </section>
         </div>
       </main>
+
       {isModalOpen && (
         <Dialog
           open={isModalOpen}
@@ -1363,10 +1310,9 @@ export default function Home() {
             <Form {...methods}>
               <form
                 className="space-y-6"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleSubmit(handleAddOrUpdateSupplement)(e);
-                }}
+                onSubmit={methods.handleSubmit((data) =>
+                  handleAddOrUpdateSupplement(data as SupplementFormData)
+                )}
                 aria-label={
                   selectedSupplement
                     ? "サプリ編集フォーム"
@@ -1443,20 +1389,18 @@ export default function Home() {
                         <div className="flex">
                           <Input
                             id="dosage"
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             className="rounded-r-none"
-                            {...field}
+                            value={field.value?.toString() || ""}
                             onChange={(e) => {
-                              const value =
-                                e.target.value === ""
-                                  ? undefined
-                                  : parseFloat(e.target.value);
-                              field.onChange(value);
+                              const value = e.target.value;
+                              field.onChange(value === "" ? "" : value);
                             }}
                             aria-label="サプリメント全体の内容量の数値"
                             aria-required="true"
-                            min={1}
-                            defaultValue={1}
+                            placeholder="数値を入力"
                           />
                           <select
                             id="dosage_unit"
@@ -1480,11 +1424,13 @@ export default function Home() {
                             <option value="包">包</option>
                           </select>
                         </div>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
 
                   <FormField
+                    control={methods.control}
                     name="intake_amount"
                     render={({ field }) => (
                       <FormItem>
@@ -1494,20 +1440,18 @@ export default function Home() {
                         <div className="flex">
                           <Input
                             id="intake_amount"
-                            type="number"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             className="rounded-r-none"
-                            {...field}
+                            value={field.value?.toString() || ""}
                             onChange={(e) => {
-                              const value =
-                                e.target.value === ""
-                                  ? undefined
-                                  : parseFloat(e.target.value);
-                              field.onChange(value);
+                              const value = e.target.value;
+                              field.onChange(value === "" ? "" : value);
                             }}
                             aria-label="一回の服用量の数値"
                             aria-required="true"
-                            min={1}
-                            defaultValue={1}
+                            placeholder="数値を入力"
                           />
                           <select
                             id="intake_unit"
@@ -1531,6 +1475,7 @@ export default function Home() {
                             <option value="包">包</option>
                           </select>
                         </div>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -1656,14 +1601,19 @@ export default function Home() {
                         <FormControl>
                           <Input
                             id="daily_target_count"
-                            type="number"
-                            onChange={field.onChange}
-                            value={field.value}
-                            defaultValue={1}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              field.onChange(value === "" ? "" : value);
+                            }}
+                            value={field.value?.toString() || ""}
                             className="w-24"
-                            min={1}
+                            placeholder="数値を入力"
                           />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -1734,24 +1684,33 @@ export default function Home() {
                     role="group"
                     aria-labelledby="meal_timing_label"
                   >
-                    {/* 食前・食後の選択肢を排他的にする（ラジオボタン） */}
+                    {/* 食前・食後・空腹時・なしの選択肢を排他的にする（ラジオボタン） */}
                     <div className="w-full mb-1">
                       <RadioGroup
-                        value={
-                          watch("timing_before_meal")
-                            ? "before_meal"
-                            : watch("timing_after_meal")
-                            ? "after_meal"
-                            : ""
-                        }
+                        value={methods.watch("meal_timing") || "none"}
                         onValueChange={(value) => {
+                          // meal_timingを更新
+                          setValue(
+                            "meal_timing",
+                            value as
+                              | "before_meal"
+                              | "after_meal"
+                              | "empty_stomach"
+                              | "none"
+                          );
+
+                          // 古い個別のフラグを更新（後方互換性のため）
                           setValue(
                             "timing_before_meal",
                             value === "before_meal"
                           );
                           setValue("timing_after_meal", value === "after_meal");
+                          setValue(
+                            "timing_empty_stomach",
+                            value === "empty_stomach"
+                          );
                         }}
-                        className="flex gap-5"
+                        className="flex flex-wrap gap-5"
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem
@@ -1768,30 +1727,22 @@ export default function Home() {
                           <Label htmlFor="timing_after_meal_radio">食後</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="" id="timing_none_radio" />
+                          <RadioGroupItem
+                            value="empty_stomach"
+                            id="timing_empty_stomach_radio"
+                          />
+                          <Label htmlFor="timing_empty_stomach_radio">
+                            空腹時
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="none" id="timing_none_radio" />
                           <Label htmlFor="timing_none_radio">なし</Label>
                         </div>
                       </RadioGroup>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <FormField
-                        control={methods.control}
-                        name="timing_empty_stomach"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                id="timing_empty_stomach"
-                              />
-                            </FormControl>
-                            <Label htmlFor="timing_empty_stomach">空腹時</Label>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    {/* 就寝前はチェックボックスで個別に選択可能 */}
                     <div className="flex items-center space-x-2">
                       <FormField
                         control={methods.control}

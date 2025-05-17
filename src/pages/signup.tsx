@@ -1,31 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
 import firebase from "../lib/firebaseClient";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
 import Link from "next/link";
-
-type FormData = {
-  email: string;
-  password: string;
-};
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signupSchema, SignupFormData } from "@/schemas/auth";
 
 const SignupPage: React.FC = () => {
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<FormData>();
+  } = useForm<SignupFormData>({
+    resolver: zodResolver(signupSchema),
+  });
   const router = useRouter();
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: SignupFormData) => {
     try {
       await firebase
         .auth()
         .createUserWithEmailAndPassword(data.email, data.password);
-      // router.push('/supplements'); // サプリ一覧画面へ遷移
-      router.push("/"); // サプリ一覧画面ないのでTOPへ遷移
-    } catch (error) {
+      router.push("/");
+    } catch (error: any) {
       console.error(error);
+      if (error.code === "auth/email-already-in-use") {
+        setAuthError("このメールアドレスは既に使用されています");
+      } else {
+        setAuthError("アカウント作成中にエラーが発生しました");
+      }
     }
   };
 
@@ -43,6 +47,14 @@ const SignupPage: React.FC = () => {
           >
             アカウント作成
           </h1>
+          {authError && (
+            <div
+              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+              role="alert"
+            >
+              <span className="block sm:inline">{authError}</span>
+            </div>
+          )}
           <div className="flex flex-col grow">
             <label
               htmlFor="email-field"
@@ -54,9 +66,7 @@ const SignupPage: React.FC = () => {
               id="email-field"
               type="email"
               className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-gray-400 transition duration-100 focus:ring-2 focus:ring-offset-2"
-              {...register("email", {
-                required: "メールアドレスを入力してください",
-              })}
+              {...register("email")}
               aria-invalid={errors.email ? "true" : "false"}
               aria-describedby={errors.email ? "email-error" : undefined}
             />
@@ -77,9 +87,7 @@ const SignupPage: React.FC = () => {
               id="password-field"
               type="password"
               className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-gray-400 transition duration-100 focus:ring-2 focus:ring-offset-2"
-              {...register("password", {
-                required: "パスワードを入力してください",
-              })}
+              {...register("password")}
               aria-invalid={errors.password ? "true" : "false"}
               aria-describedby={errors.password ? "password-error" : undefined}
             />
