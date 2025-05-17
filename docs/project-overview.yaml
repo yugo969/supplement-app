@@ -9,6 +9,7 @@ project:
     backend: Firebase
     styling: TailwindCSS 3.3.3
     animation: framer-motion
+    form_validation: Zod, React Hook Form
 
 architecture:
   directories:
@@ -19,15 +20,56 @@ architecture:
     - src/hooks: カスタムフック
     - src/lib: ユーティリティ関数とFirebase連携
     - src/styles: グローバルスタイル
+    - src/schemas: バリデーションスキーマ定義
+
+  schema_management:
+    - rule: "Zodバリデーションスキーマはsrc/schemas/ディレクトリに配置する"
+    - rule: "機能ごとに別ファイルで管理（例：auth.ts, supplement.ts, form-schemas.ts）"
+    - rule: "フォーム関連の汎用スキーマはsrc/schemas/form-schemas.tsに配置"
+    - rule: "再利用可能な共通バリデーションロジックは関数として抽出する"
+    - rule: "型定義はスキーマと同じファイルに配置し、z.infer<typeof schema>で生成する"
+    - rule: "UIコンポーネントからバリデーションロジックを分離し、スキーマファイルに集中管理する"
+    - naming_convention:
+        - "ドメインモデル: src/schemas/{モデル名}.ts"
+        - "フォーム統合: src/schemas/form-schemas.ts"
+        - "機能別フォーム: src/schemas/{機能名}-forms.ts"
 
 features:
   - name: 認証
-    location: src/context/AuthContext.tsx
+    location:
+      - src/context/AuthContext.tsx
+      - src/pages/login.tsx
+      - src/pages/signup.tsx
+      - src/schemas/auth.ts
     functions:
       - AuthProvider: 認証状態の管理
+      - loginSchema: ログインフォームのバリデーション
+      - signupSchema: 新規登録フォームのバリデーション
+    details: |
+      Firebase Authenticationを使用したユーザー認証機能。
+      Zodを使用した堅牢なフォームバリデーションを実装し、以下の検証を行っています：
+
+      ログインフォーム:
+      - メールアドレス: 必須入力、有効なメールアドレス形式
+      - パスワード: 必須入力、8文字以上
+
+      新規登録フォーム:
+      - メールアドレス: 必須入力、有効なメールアドレス形式
+      - パスワード: 必須入力、8文字以上、小文字・大文字・数字を含む
+      - パスワード確認: 必須入力、パスワードとの一致
+
+      Firebase認証エラーハンドリング:
+      - メールアドレス重複
+      - ユーザー未登録
+      - パスワード不一致
+      - ログイン試行回数超過
+      などのエラーに対して適切なメッセージを表示
 
   - name: サプリメント管理
-    location: src/lib/firestore.ts
+    location:
+      - src/lib/firestore.ts
+      - src/schemas/supplement.ts
+      - src/lib/type-guards.ts
     functions:
       - addSupplement: サプリメント追加
       - getSupplements: サプリメント一覧取得
@@ -38,6 +80,9 @@ features:
       - updateSupplementCount: 服用回数更新
       - getCurrentDate: 現在の日付を取得
       - resetTimingsIfDateChanged: 日付変更時の服用状況リセット
+      - supplementSchema: サプリメント登録・編集用のバリデーションスキーマ
+      - convertToSupplementData: APIレスポンスをSupplementData型に変換
+      - convertToSupplementDataArray: APIレスポンス配列をSupplementData型配列に変換
     details: |
       サプリメントの管理機能に日付変更時の自動リセット機能を追加。
       毎日0時になると服用状況（朝・昼・夜など）または服用回数が自動的にリセットされ、
@@ -170,3 +215,62 @@ features:
       - UI全体の配色・余白・シャドウを調整し、視認性と一貫性を向上
       - 各服用タイミングのアイコン・ラベル表示を統一し、アクセシビリティも考慮
       - 既存のカードUIやフォームUIとのデザイン統一を図り、ユーザー体験を向上
+
+  - name: フォームバリデーション
+    location:
+      - src/pages/login.tsx
+      - src/pages/signup.tsx
+      - src/pages/index.tsx
+      - src/schemas/auth.ts
+      - src/schemas/supplement.ts
+    functions:
+      - loginSchema: ログインフォームのバリデーション
+      - signupSchema: 新規登録フォームのバリデーション
+      - supplementSchema: サプリメント登録フォームのバリデーション
+    details: |
+      Zodを使用した堅牢なフォームバリデーションを実装。
+      React Hook Formと連携し、以下の機能を提供:
+
+      - リアルタイムバリデーション
+      - エラーメッセージの表示
+      - フォーム送信時の検証
+      - 複雑な条件付きバリデーション（refineメソッド使用）
+
+      各フォームに適したバリデーションルールを設定:
+
+      ログインフォーム:
+      - メールアドレス: 必須、メール形式
+      - パスワード: 必須、8文字以上
+
+      新規登録フォーム:
+      - メールアドレス: 必須、メール形式
+      - パスワード: 必須、8文字以上、複雑さ要件（小文字、大文字、数字を含む）
+      - パスワード確認: 必須、パスワードとの一致
+
+      サプリメント登録フォーム:
+      - サプリメント名: 必須
+      - 内容量: 必須、正の整数
+      - 服用量: 必須、正の整数
+      - 単位: 必須
+      - 服用方法: タイミングベースまたは回数ベース
+      - タイミングベース選択時: 少なくとも1つの時間帯選択が必須
+      - 回数ベース選択時: 目標服用回数の入力が必須（正の整数）
+      - 推奨服用方法: 食前/食後/なしをラジオボタンで排他的選択、空腹時と就寝前はチェックボックスで独立選択
+
+      コードの保守性向上のため、バリデーションスキーマを専用の src/schemas ディレクトリに
+      分離し、各機能ごとに別ファイルで管理。これにより:
+
+      - コードの再利用性向上
+      - 関心の分離
+      - 保守性の向上
+      - テスト容易性
+
+      数値フィールドのバリデーション強化:
+      - 未入力時の適切なエラーメッセージ表示
+      - 1桁目の削除を可能にする入力方式の実装
+      - 正の整数値のみ許可するバリデーション
+      - 共通のバリデーションロジックを関数として抽出（numberFieldSchema）
+
+      型変換に関しては、src/lib/type-guards.ts にAPIレスポンスと
+      モデルの変換を行うユーティリティ関数を実装。これによりFirestoreから取得した
+      データを安全にアプリケーションの型定義に変換できる。
