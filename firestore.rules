@@ -3,11 +3,13 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // supplements コレクションに対するルール
     match /supplements/{supplementId} {
-      // 認証済みのユーザーのみがデータを読み書きできるようにする
-      allow read, write: if request.auth.uid != null;
+      // 認証済みのユーザーのみがドキュメントの作成を許可
+      allow create: if request.auth.uid != null &&
+                    request.resource.data.userId == request.auth.uid;
 
-      // ドキュメントの userId フィールドがリクエストのユーザーIDと一致する場合のみ、読み書きを許可する
-      allow read, write: if request.auth.uid == resource.data.userId;
+      // 自分のデータのみ読み書き可能
+      allow read, update, delete: if request.auth.uid != null &&
+                                   resource.data.userId == request.auth.uid;
     }
   }
 }
