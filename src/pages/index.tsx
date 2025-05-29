@@ -1417,9 +1417,7 @@ export default function Home() {
                               単位
                             </option>
                             <option value="錠">錠</option>
-                            <option value="粒">粒</option>
                             <option value="g">g</option>
-                            <option value="mg">mg</option>
                             <option value="ml">ml</option>
                             <option value="包">包</option>
                           </select>
@@ -1468,9 +1466,7 @@ export default function Home() {
                               単位
                             </option>
                             <option value="錠">錠</option>
-                            <option value="粒">粒</option>
                             <option value="g">g</option>
-                            <option value="mg">mg</option>
                             <option value="ml">ml</option>
                             <option value="包">包</option>
                           </select>
