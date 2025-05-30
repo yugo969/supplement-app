@@ -87,6 +87,7 @@ export const addSupplement = async (data: any) => {
       userId: user.uid, // ユーザーIDをドキュメントに保存
       lastTakenDate: currentDate,
       shouldResetTimings: false,
+      dosage_left: data.dosage, // 新規追加時は残量=内容量
     };
 
     await supplementsRef.add(supplementData);
@@ -142,7 +143,13 @@ export const updateSupplement = async (id: string, data: any) => {
       );
     }
 
-    await supplementRef.update(data);
+    // 内容量（dosage）が更新される場合は、残り数量（dosage_left）も同じ値に更新
+    const updateData = { ...data };
+    if (data.dosage !== undefined) {
+      updateData.dosage_left = data.dosage;
+    }
+
+    await supplementRef.update(updateData);
   } catch (error) {
     console.error("サプリメント更新エラー:", error);
     throw error;

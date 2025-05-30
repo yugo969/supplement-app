@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { MdAdd, MdRemove, MdInfoOutline } from "react-icons/md";
+import { MdAdd, MdRemove } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { AnimatedButton } from "@/components/ui/animated-button";
 import {
@@ -9,14 +9,9 @@ import {
   AnimatedCardContent,
   AnimatedCardFooter,
 } from "@/components/ui/animated-card";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import RecommendedIntakeInfo from "@/components/RecommendedIntakeInfo";
 import { SupplementData } from "@/schemas/supplement";
 import { useNotification } from "@/lib/useNotification";
+import RecommendedIntakeInfo from "@/components/RecommendedIntakeInfo";
 
 // カスタムSVGアイコンコンポーネント
 const MorningIcon = ({ size = 24 }: { size?: number }) => (
@@ -250,24 +245,52 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
   animatingIds,
 }) => {
   const { showNotification } = useNotification();
+  const [isNameExpanded, setIsNameExpanded] = React.useState(false);
+  const [isTextTruncated, setIsTextTruncated] = React.useState(false);
+  const nameRef = React.useRef<HTMLDivElement>(null);
+
+  // テキストが省略されているかチェック
+  React.useEffect(() => {
+    const checkTruncation = () => {
+      if (nameRef.current && !isNameExpanded) {
+        const isOverflowing =
+          nameRef.current.scrollWidth > nameRef.current.clientWidth;
+        setIsTextTruncated(isOverflowing);
+      }
+    };
+
+    checkTruncation();
+    window.addEventListener("resize", checkTruncation);
+    return () => window.removeEventListener("resize", checkTruncation);
+  }, [supplement.supplement_name, isNameExpanded]);
 
   const isTimingBased = supplement.dosage_method === "timing";
   const isCountBased = supplement.dosage_method === "count";
 
-  // タイミングベースの場合のタイミングボタン
+  // タイミングベースの場合のタイミングボタン - 選択されたタイミングのみ表示
   const renderTimingButtons = () => {
-    const timings = ["morning", "noon", "night"];
-    return timings.map((timing) => {
-      const isDisabled =
-        showFeedback ||
-        animatingIds.includes(`${supplement.id}-${timing}`) ||
-        (supplement.dosage_left ?? supplement.dosage) <
-          supplement.intake_amount;
+    const selectedTimings = [];
 
+    // 朝・昼・夜の設定されているタイミングのみを表示
+    if (supplement.timing_morning) selectedTimings.push("morning");
+    if (supplement.timing_noon) selectedTimings.push("noon");
+    if (supplement.timing_night) selectedTimings.push("night");
+
+    return selectedTimings.map((timing) => {
       const isTaken =
         supplement.takenTimings?.[
           timing as keyof typeof supplement.takenTimings
         ];
+
+      // 残り容量不足の場合、服用済み→未服用は可能だが、未服用→服用は不可
+      const isInsufficientDosage =
+        (supplement.dosage_left ?? supplement.dosage) <
+        supplement.intake_amount;
+
+      const isDisabled =
+        showFeedback ||
+        animatingIds.includes(`${supplement.id}-${timing}`) ||
+        (!isTaken && isInsufficientDosage); // 未服用で残り容量不足の場合のみ無効
 
       return (
         <AnimatedButton
@@ -291,12 +314,12 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
 
     return (
       <div className="w-full">
-        <div className="flex items-center bg-white rounded-full border-2 border-gray-300 shadow-md w-full overflow-hidden h-8">
+        <div className="flex items-center bg-white rounded-full border-2 border-gray-300 shadow-md w-full overflow-hidden h-10">
           <button
             type="button"
             onClick={() => onDecreaseCount(supplement.id)}
             disabled={showFeedback || currentCount <= 0}
-            className="flex-none w-8 h-8 p-0 text-gray-600 border-r border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-l-full shadow-inner hover:shadow-md"
+            className="flex-none w-10 h-10 p-0 text-gray-600 border-r border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-l-full shadow-inner hover:shadow-md"
             style={{
               backgroundColor: "#e5e7eb",
               boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
@@ -357,7 +380,7 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
               (supplement.dosage_left ?? supplement.dosage) <
                 supplement.intake_amount
             }
-            className="flex-none w-8 h-8 p-0 text-gray-600 border-l border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-r-full shadow-inner hover:shadow-md"
+            className="flex-none w-10 h-10 p-0 text-gray-600 border-l border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-r-full shadow-inner hover:shadow-md"
             style={{
               backgroundColor: "#e5e7eb",
               boxShadow: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
@@ -389,7 +412,7 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
       className="w-full max-w-[356px] overflow-hidden border-2 border-white bg-zinc-50 shadow-slate-300 animated-card"
       tabIndex={0}
     >
-      <div className="relative w-full h-auto aspect-[3/2]">
+      <div className="relative w-full h-auto" style={{ aspectRatio: "3/1.8" }}>
         {supplement.imageUrl ? (
           <Image
             src={supplement.imageUrl}
@@ -405,62 +428,94 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
             no-image
           </div>
         )}
-      </div>
 
-      <AnimatedCardHeader className="p-0">
-        <div className="text-center break-all">
-          <h2 className="py-0.5 px-4 bg-gray-700 text-bold text-sm text-white rounded-b-[40px] truncate">
-            {supplement.supplement_name}
-          </h2>
+        {/* サプリ名オーバーレイ */}
+        <div className="absolute bottom-2 left-0 right-0 flex justify-center">
+          <div
+            className={`relative bg-gray-700/90 backdrop-blur-sm text-white text-sm font-medium rounded-lg px-2 py-2 transition-all duration-300 ease-out hover:bg-gray-700 max-w-[90%] ${
+              isTextTruncated ? "cursor-pointer" : ""
+            }`}
+            onClick={() =>
+              isTextTruncated && setIsNameExpanded(!isNameExpanded)
+            }
+            onMouseEnter={() => isTextTruncated && setIsNameExpanded(true)}
+            onMouseLeave={() => setIsNameExpanded(false)}
+            aria-label={supplement.supplement_name}
+          >
+            <div
+              ref={nameRef}
+              className={`transition-all duration-300 ease-out text-center ${
+                isNameExpanded ? "whitespace-normal break-words" : "truncate"
+              }`}
+              style={{
+                maxHeight: isNameExpanded ? "200px" : "1.5rem",
+                overflow: "hidden",
+              }}
+            >
+              {supplement.supplement_name}
+            </div>
+          </div>
         </div>
-      </AnimatedCardHeader>
+      </div>
 
       <AnimatedCardContent className="flex flex-col gap-3 p-4">
         {/* 容量情報 */}
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-gray-600">
-            残り: {supplement.dosage_left ?? supplement.dosage}{" "}
-            {supplement.dosage_unit}
+        <div className="flex justify-center items-center gap-8">
+          <span className="flex items-baseline gap-1">
+            <span className="text-gray-500 text-sm flex-shrink-0">残り:</span>
+            <span className="text-gray-800 text-lg font-medium overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {supplement.dosage_left ?? supplement.dosage}
+            </span>
+            <span className="text-gray-600 text-sm flex-shrink-0">
+              {supplement.dosage_unit}
+            </span>
           </span>
-          <span className="text-gray-600">
-            1回: {supplement.intake_amount} {supplement.intake_unit}
+          <span className="flex items-baseline gap-1">
+            <span className="text-gray-500 text-sm flex-shrink-0">1回:</span>
+            <span className="text-gray-800 text-lg font-medium overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {supplement.intake_amount}
+            </span>
+            <span className="text-gray-600 text-sm flex-shrink-0">
+              {supplement.intake_unit}
+            </span>
           </span>
         </div>
 
         {/* 服用管理エリア */}
         <div className="space-y-2">
           {isTimingBased && (
-            <div className="flex flex-wrap gap-2 justify-center">
-              {renderTimingButtons()}
+            <div className="p-1 flex flex-col gap-2">
+              <div className="flex flex-wrap gap-2 justify-center">
+                {renderTimingButtons()}
+              </div>
+
+              {/* 推奨服用方法の表示 - タイミングボタンの下 */}
+              <RecommendedIntakeInfo
+                timings={{
+                  before_meal: supplement.timing_before_meal || false,
+                  after_meal: supplement.timing_after_meal || false,
+                  empty_stomach: supplement.timing_empty_stomach || false,
+                  bedtime: supplement.timing_bedtime || false,
+                }}
+              />
             </div>
           )}
 
-          {isCountBased && renderCountControls()}
+          {isCountBased && (
+            <div className="p-1 flex flex-col gap-2">
+              {renderCountControls()}
 
-          {/* 推奨服用方法表示 */}
-          <div className="text-center">
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <button
-                  className="inline-flex items-center text-xs text-gray-500 hover:text-gray-700 transition-colors"
-                  aria-label="推奨服用方法を表示"
-                >
-                  <MdInfoOutline size={14} className="mr-1" />
-                  推奨服用方法
-                </button>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-80">
-                <RecommendedIntakeInfo
-                  timings={{
-                    before_meal: supplement.timing_before_meal || false,
-                    after_meal: supplement.timing_after_meal || false,
-                    empty_stomach: supplement.timing_empty_stomach || false,
-                    bedtime: supplement.timing_bedtime || false,
-                  }}
-                />
-              </HoverCardContent>
-            </HoverCard>
-          </div>
+              {/* 推奨服用方法の表示 - カウンターの下 */}
+              <RecommendedIntakeInfo
+                timings={{
+                  before_meal: supplement.timing_before_meal || false,
+                  after_meal: supplement.timing_after_meal || false,
+                  empty_stomach: supplement.timing_empty_stomach || false,
+                  bedtime: supplement.timing_bedtime || false,
+                }}
+              />
+            </div>
+          )}
         </div>
       </AnimatedCardContent>
 
