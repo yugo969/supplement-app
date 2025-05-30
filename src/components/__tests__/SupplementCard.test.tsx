@@ -77,8 +77,18 @@ describe("SupplementCard", () => {
 
   it("容量情報が表示される", () => {
     render(<SupplementCard supplement={mockSupplement} {...mockProps} />);
-    expect(screen.getByText(/残り: 90 錠/)).toBeInTheDocument();
-    expect(screen.getByText(/1回: 2 錠/)).toBeInTheDocument();
+
+    // 残り容量の情報を確認
+    expect(screen.getByText("残り:")).toBeInTheDocument();
+    expect(screen.getByText("90")).toBeInTheDocument();
+
+    // 1回分の情報を確認
+    expect(screen.getByText("1回:")).toBeInTheDocument();
+    expect(screen.getByText("2")).toBeInTheDocument();
+
+    // 単位「錠」が2つあることを確認
+    const units = screen.getAllByText("錠");
+    expect(units).toHaveLength(2);
   });
 
   it("タイミングベースの場合、朝・昼・夜のボタンが表示される", () => {

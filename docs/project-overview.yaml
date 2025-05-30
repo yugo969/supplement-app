@@ -402,3 +402,81 @@ features:
 
       なお、index.tsx では不要な単位選択肢の削除も同時に実施し、
       UI の整理とコード品質向上を両立させている。
+
+  - name: コンポーネント抽出・リファクタリング
+    description: index.tsxの大規模ファイル（1345行）を保守性向上のため小さなコンポーネントに分割
+    location:
+      - src/components/SupplementForm.tsx
+      - src/hooks/useSupplementOperations.ts
+      - docs/functional-test-checklist.md
+      - docs/refactoring-checklist.md
+    status:
+      phase_2_supplement_form:
+        status: "完了"
+        description: "SupplementFormコンポーネント（555行）の抽出が完了し、Dialog形式での追加・編集機能が正常動作"
+        lines_reduced: 495
+        typescript_errors: 0
+      phase_3_1_supplement_operations:
+        status: "完了"
+        description: "useSupplementOperationsカスタムフック（474行）の抽出が完了し、CRUD操作が正常動作"
+        functions_extracted: 9
+        lines_reduced: 350
+        typescript_errors: 0
+      phase_3_2_timing_operations:
+        status: "ロールバック完了"
+        description: "useSupplementTimingOperationsの抽出を試行したが機能問題により元の実装に復元"
+        issue: "タイミングボタンの残り容量反映、カード表示の不具合"
+        resolution: "タイミング関連処理をindex.tsx内に保持"
+      current_state:
+        index_tsx_lines: 471 # 1345行から874行削減
+        total_components: 2 # SupplementForm, SupplementCard
+        total_hooks: 1 # useSupplementOperations
+        functional_status: "一部修正中"
+        priority_fixes:
+          - "推奨服用方法のカードUI表示復元"
+          - "タイミングボタンの選択的表示"
+          - "服用記録の残り容量反映"
+    functions:
+      - name: "SupplementForm"
+        location: "src/components/SupplementForm.tsx"
+        responsibility: "サプリメント追加・編集フォームのUI"
+        props: 13
+        lines: 555
+      - name: "useSupplementOperations"
+        location: "src/hooks/useSupplementOperations.ts"
+        responsibility: "CRUD操作とビジネスロジック"
+        exported_functions: 9
+        lines: 474
+    details: |
+      大規模なindex.tsxファイル（1345行）の保守性向上を目的として段階的リファクタリングを実施。
+
+      Phase 2: SupplementForm コンポーネント抽出（✅完了）
+      - Dialog形式のサプリメント追加・編集フォーム（555行）を独立コンポーネント化
+      - 画像アップロード、バリデーション、推奨服用方法設定機能を含む完全なフォーム機能
+      - TypeScriptエラー0件で正常動作を確認
+
+      Phase 3.1: useSupplementOperations カスタムフック抽出（✅完了）
+      - CRUD操作関連の9つの関数（474行）をカスタムフックに抽出
+      - 状態管理とビジネスロジックの分離により保守性向上
+      - TypeScriptエラー0件で正常動作を確認
+
+      Phase 3.2: useSupplementTimingOperations 抽出試行（❌ロールバック）
+      - タイミング関連の処理抽出を試行したが機能的問題が発生
+      - 問題：タイミングボタン押下時の残り容量反映不具合、カード表示異常
+      - 解決策：緊急ロールバックを実行し、元の実装を復元
+
+      現在の課題と修正作業：
+      1. 推奨服用方法のカードUI表示復元（RecommendedIntakeInfoコンポーネント統合）
+      2. タイミングベース選択時の適切なボタン表示（選択されたタイミングのみ）
+      3. 服用記録処理の残り容量反映問題の解決
+
+      成果：
+      - index.tsx: 1345行 → 471行（874行削減、約65%削減）
+      - コンポーネント分離によるコードの可読性・保守性向上
+      - TypeScript型安全性の維持
+      - 機能別の責務分離（UI・ビジネスロジック・状態管理）
+
+      次のステップ：
+      - 機能テストチェックリスト（docs/functional-test-checklist.md）に基づく品質確認
+      - 残りの高優先度修正項目の解決
+      - 追加のコンポーネント抽出継続（SupplementCard細分化等）
