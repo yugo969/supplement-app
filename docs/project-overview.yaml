@@ -4,7 +4,7 @@ project:
   name: supplement-app
   description: サプリメント管理アプリケーション
   tech_stack:
-    framework: Next.js 13.4.19
+    framework: Next.js 15.3.3
     language: TypeScript
     backend: Firebase
     styling: TailwindCSS 3.3.3
@@ -16,6 +16,18 @@ project:
       staged_linting: Lint-Staged ^15.0.2
       linting: ESLint ^8.48.0
       type_checking: TypeScript ^5.6.2
+    security_updates:
+      latest_update: "2024年末: Next.js 13.4.19 → 15.3.3、PostCSS 8.4.29 → 8.5.4 セキュリティ脆弱性対応"
+      vulnerabilities_fixed: "SSRF、HTTP Request Smuggling、認証バイパス、PostCSS line return parsing error等"
+      breaking_change: "Next.js 15へのメジャーアップグレード（破壊的変更含む）"
+      pending_updates:
+        firebase_v11:
+          current_version: "10.13.2"
+          available_version: "11.8.1"
+          moderate_vulnerabilities: 10
+          vulnerability_source: "undici依存関係（Firebase SDK経由）"
+          risk_assessment: "メジャーアップグレード、破壊的変更の可能性あり"
+          recommendation: "別PR対応推奨、慎重な検証が必要"
 
 architecture:
   directories:
@@ -287,12 +299,20 @@ features:
       - .husky/pre-commit
       - .prettierrc
       - package.json (lint-staged設定)
+      - .github/workflows/ci.yml
+      - .github/workflows/security.yml
+      - .github/dependabot.yml
     functions:
       - pre-commit: Git コミット前の自動チェック
       - lint-staged: ステージングされたファイルの自動整形
       - prettier: コード フォーマッティング
+      - CI/CD: Push/PR時の自動品質チェック
+      - security-audit: セキュリティ脆弱性の自動検査
+      - dependabot: 依存関係の自動更新
     details: |
       コード品質の一貫性を保つため、以下の開発ツールを統合:
+
+      ### ローカル開発環境での品質管理
 
       Husky (^8.0.0):
       - Git フックの管理
@@ -315,11 +335,69 @@ features:
         - タブ幅: 2 スペース
         - タブ文字: 無効（スペース使用）
 
+      ### CI/CDパイプライン（GitHub Actions）
+
+      メインCI (.github/workflows/ci.yml):
+      - トリガー: main/developブランチへのpush、またはPR作成時
+      - 実行環境: Ubuntu Latest (Node.js 18.x)
+      - 実行内容:
+        - ESLint による静的解析
+        - TypeScript 型チェック（npm run type-check）
+        - Prettier フォーマットチェック（npm run format:check）
+        - Next.js ビルド確認
+      - キャッシュ: npm依存関係のキャッシュによる高速化
+
+      セキュリティチェック (.github/workflows/security.yml):
+      - トリガー: push/PR + 毎週月曜日午前9時（JST）の定期実行
+      - 実行内容:
+        - npm audit による脆弱性検査（高レベル以上のみ失敗扱い）
+        - 中程度脆弱性は情報表示のみ（個人開発向け設定）
+        - 高レベル/重要脆弱性検出時の自動失敗
+      - 目的: セキュリティリスクの早期発見と対応
+      - デバッグ機能:
+        - 詳細な脆弱性情報をJSON形式で出力
+        - 重要度別の脆弱性カウント表示
+        - デバッグ結果をアーティファクトとして保存（30日間）
+        - より詳細なエラーレポート機能
+
+      ### 依存関係管理（Dependabot）
+
+      Dependabot (.github/dependabot.yml):
+      - npm依存関係の自動更新:
+        - スケジュール: 毎週月曜日午前9時（JST）
+        - 対象: 直接依存関係 + 間接依存関係
+        - 制限: メジャーバージョンアップは除外（安全性重視）
+        - PR上限: 5件まで
+      - GitHub Actions の自動更新:
+        - スケジュール: 毎週月曜日午前9時（JST）
+        - PR上限: 2件まで
+      - 設定:
+        - コミットメッセージプレフィックス: "deps"
+        - 自動アサイン・レビュー機能
+        - セキュリティアップデートの優先実行
+      - 注記: 個人開発のため、GitHub Settings > Security & analysis で一時無効化可能
+
+      ### 追加されたnpm scripts
+
+      - type-check: TypeScript型チェック（tsc --noEmit）
+      - format: Prettier自動フォーマット
+      - format:check: Prettierフォーマットチェック
+      - lint:fix: ESLint自動修正
+
+      ### 品質管理の多層構造
+
+      1. **ローカル開発時**: Husky + Lint-Staged による即座のチェック
+      2. **リモートpush/PR時**: GitHub Actions による包括的チェック
+      3. **定期実行**: セキュリティ監査と依存関係更新
+      4. **手動実行**: 開発者による個別スクリプトの実行
+
       この構成により、開発者は以下の恩恵を受けられる:
       - コミット時の自動的な品質チェック
       - チーム全体でのコードスタイル統一
       - 手動でのフォーマット作業削減
       - TypeScript 型エラーの事前検出
+      - セキュリティ脆弱性の早期発見
+      - 依存関係の自動更新による保守負荷軽減（必要に応じて無効化可能）
       - 長期的な保守性の向上
 
       なお、index.tsx では不要な単位選択肢の削除も同時に実施し、

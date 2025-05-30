@@ -1,9 +1,9 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback } from "react";
 
 type NotificationProps = {
   message: string;
   duration?: number;
-  autoHide?: boolean
+  autoHide?: boolean;
   onDismiss?: () => void;
   actions?: {
     label: string;
@@ -18,12 +18,16 @@ type NotificationContextType = {
   showNotification: (props: NotificationProps) => void;
 };
 
-const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
+const NotificationContext = createContext<NotificationContextType | undefined>(
+  undefined
+);
 
 export const useNotificationContext = () => {
   const context = useContext(NotificationContext);
   if (!context) {
-    throw new Error('useNotificationContext must be used within a NotificationProvider');
+    throw new Error(
+      "useNotificationContext must be used within a NotificationProvider"
+    );
   }
   return context;
 };
@@ -34,25 +38,37 @@ type Props = {
 
 export const NotificationProvider: React.FC<Props> = ({ children }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [notificationProps, setNotificationProps] = useState<NotificationProps | null>(null);
+  const [notificationProps, setNotificationProps] =
+    useState<NotificationProps | null>(null);
 
-  const showNotification = useCallback(({ message, duration = 1000, autoHide = true, onDismiss, actions }: NotificationProps) => {
-    setNotificationProps({ message, duration, autoHide, actions });
-    setIsVisible(true);
+  const showNotification = useCallback(
+    ({
+      message,
+      duration = 1000,
+      autoHide = true,
+      onDismiss,
+      actions,
+    }: NotificationProps) => {
+      setNotificationProps({ message, duration, autoHide, actions });
+      setIsVisible(true);
 
-    if(autoHide){
-      setTimeout(() => {
-        setIsVisible(false);
-        setNotificationProps(null);
-        if (onDismiss) {
-          onDismiss();
-        }
-      }, duration);
-    }
-  }, []);
+      if (autoHide) {
+        setTimeout(() => {
+          setIsVisible(false);
+          setNotificationProps(null);
+          if (onDismiss) {
+            onDismiss();
+          }
+        }, duration);
+      }
+    },
+    []
+  );
 
   return (
-    <NotificationContext.Provider value={{ isVisible, notificationProps, showNotification }}>
+    <NotificationContext.Provider
+      value={{ isVisible, notificationProps, showNotification }}
+    >
       {children}
     </NotificationContext.Provider>
   );

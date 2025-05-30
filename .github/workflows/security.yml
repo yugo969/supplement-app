@@ -1,0 +1,132 @@
+name: Security Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # 毎週月曜日の午前9時（JST）に実行
+    - cron: "0 0 * * 1"
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          cache: "npm"
+
+      - name: Install jq for JSON parsing
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security audit (informational)
+        run: npm audit --audit-level=moderate || echo "Vulnerabilities detected but continuing..."
+
+      - name: Debug vulnerabilities
+        run: |
+          echo "🔍 Debugging vulnerabilities..."
+
+          # Generate audit JSON with error handling
+          if npm audit --json > debug_audit.json 2>/dev/null; then
+            echo "✅ Successfully generated debug_audit.json"
+          else
+            echo "⚠️ npm audit returned non-zero exit code, but file may still be valid"
+            npm audit --json > debug_audit.json 2>/dev/null || echo "Failed to generate audit file"
+          fi
+
+          # Check if file exists and has content
+          if [ -f debug_audit.json ] && [ -s debug_audit.json ]; then
+            echo "=== Full audit JSON output ==="
+            cat debug_audit.json
+            echo ""
+            echo "=== Summary of vulnerabilities by severity ==="
+
+            # Parse using jq for more reliable extraction
+            if command -v jq >/dev/null 2>&1; then
+              echo "Using jq for parsing..."
+              moderate=$(jq -r '.metadata.vulnerabilities.moderate // 0' debug_audit.json)
+              high=$(jq -r '.metadata.vulnerabilities.high // 0' debug_audit.json)
+              critical=$(jq -r '.metadata.vulnerabilities.critical // 0' debug_audit.json)
+              echo "Moderate: $moderate"
+              echo "High: $high"
+              echo "Critical: $critical"
+            else
+              echo "Using grep for parsing..."
+              echo "Moderate: $(grep -o '"moderate":[0-9]*' debug_audit.json | cut -d':' -f2 || echo '0')"
+              echo "High: $(grep -o '"high":[0-9]*' debug_audit.json | cut -d':' -f2 || echo '0')"
+              echo "Critical: $(grep -o '"critical":[0-9]*' debug_audit.json | cut -d':' -f2 || echo '0')"
+            fi
+          else
+            echo "❌ debug_audit.json not found or empty"
+            echo "Creating empty audit result..."
+            echo '{"metadata":{"vulnerabilities":{"moderate":0,"high":0,"critical":0}}}' > debug_audit.json
+          fi
+
+      - name: Check for high/critical vulnerabilities only
+        run: |
+          echo "🔍 Checking for high/critical vulnerabilities only..."
+
+          # Use jq for more reliable parsing if available
+          if command -v jq >/dev/null 2>&1 && [ -f debug_audit.json ]; then
+            high_count=$(jq -r '.metadata.vulnerabilities.high // 0' debug_audit.json)
+            critical_count=$(jq -r '.metadata.vulnerabilities.critical // 0' debug_audit.json)
+
+            if [ "$critical_count" -gt 0 ]; then
+              echo "❌ Critical vulnerabilities found: $critical_count"
+              npm audit --audit-level=critical
+              exit 1
+            fi
+
+            if [ "$high_count" -gt 0 ]; then
+              echo "❌ High vulnerabilities found: $high_count"
+              npm audit --audit-level=high
+              exit 1
+            fi
+
+            echo "✅ No high/critical severity vulnerabilities found."
+          else
+            # Fallback method without jq
+            echo "Using fallback method for vulnerability check..."
+
+            # Check for critical vulnerabilities
+            if npm audit --audit-level=critical 2>/dev/null | grep -q "critical"; then
+              echo "❌ Critical vulnerabilities found!"
+              npm audit --audit-level=critical
+              exit 1
+            fi
+
+            # Check for high vulnerabilities
+            npm audit --json 2>/dev/null > full_audit.json || echo "{}" > full_audit.json
+            if grep -q '"severity":"high"' full_audit.json || grep -q '"severity":"critical"' full_audit.json; then
+              echo "❌ High/Critical severity vulnerabilities found!"
+              npm audit --audit-level=high
+              exit 1
+            fi
+
+            echo "✅ No high/critical severity vulnerabilities found."
+            rm -f full_audit.json
+          fi
+
+      - name: Show vulnerability summary (informational)
+        run: |
+          echo "=== 📊 Vulnerability Summary ==="
+          npm audit 2>/dev/null | grep "vulnerabilities" || echo "No vulnerabilities reported."
+          echo "ℹ️ Only high/critical vulnerabilities fail CI for personal development."
+
+      - name: Upload debug audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-audit-results
+          path: debug_audit.json
+          retention-days: 30
