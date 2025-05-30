@@ -29,6 +29,18 @@ jobs:
       - name: Security audit (informational)
         run: npm audit --audit-level=moderate || echo "Vulnerabilities detected but continuing..."
 
+      - name: Debug vulnerabilities
+        run: |
+          echo "🔍 Debugging vulnerabilities..."
+          npm audit --json > debug_audit.json
+          echo "=== Full audit JSON output ==="
+          cat debug_audit.json
+          echo ""
+          echo "=== Summary of vulnerabilities by severity ==="
+          echo "Moderate: $(grep -o '"moderate":[0-9]*' debug_audit.json | cut -d':' -f2 || echo '0')"
+          echo "High: $(grep -o '"high":[0-9]*' debug_audit.json | cut -d':' -f2 || echo '0')"
+          echo "Critical: $(grep -o '"critical":[0-9]*' debug_audit.json | cut -d':' -f2 || echo '0')"
+
       - name: Check for high/critical vulnerabilities only
         run: |
           echo "🔍 Checking for high/critical vulnerabilities only..."
@@ -56,3 +68,11 @@ jobs:
           echo "=== 📊 Vulnerability Summary ==="
           npm audit 2>/dev/null | grep "vulnerabilities" || echo "No vulnerabilities reported."
           echo "ℹ️ Only high/critical vulnerabilities fail CI for personal development."
+
+      - name: Upload debug audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-audit-results
+          path: debug_audit.json
+          retention-days: 30
