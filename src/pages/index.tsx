@@ -21,28 +21,12 @@ import {
   MdOutlineCancel,
   MdOutlineMedication,
   MdOutlineAddBox,
-  MdAdd,
-  MdRemove,
-  MdWbSunny,
-  MdRestaurant,
-  MdBrightness3,
-  MdBrightness2,
-  MdFreeBreakfast,
-  MdDinnerDining,
-  MdBed,
-  MdNoFood,
   MdInfoOutline,
   MdExpandMore,
   MdExpandLess,
 } from "react-icons/md";
 import resizeImage from "@/lib/resizeImage";
 import { useNotification } from "@/lib/useNotification";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,22 +45,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  AnimatedCard,
-  AnimatedCardHeader,
-  AnimatedCardContent,
-  AnimatedCardFooter,
-} from "@/components/ui/animated-card";
 import AnimatedFeedback from "@/components/AnimatedFeedback";
-import { AnimatedButton } from "@/components/ui/animated-button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import RecommendedIntakeInfo from "@/components/RecommendedIntakeInfo";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   SupplementData,
@@ -86,31 +57,10 @@ import {
   SupplementFormData,
 } from "@/schemas/supplement";
 import { z } from "zod";
+import SupplementCard from "@/components/SupplementCard";
 
 const maxWidth = 552;
 const maxHeight = 366;
-
-// タイミングアイコン設定
-const TIMING_ICONS = {
-  morning: <MdWbSunny size={18} />,
-  noon: <MdBrightness3 size={18} />,
-  night: <MdBrightness2 size={18} />,
-  before_meal: <MdNoFood size={18} />,
-  after_meal: <MdRestaurant size={18} />,
-  empty_stomach: <MdFreeBreakfast size={18} />,
-  bedtime: <MdBed size={18} />,
-};
-
-// タイミングラベル設定
-const TIMING_LABELS = {
-  morning: "朝",
-  noon: "昼",
-  night: "夜",
-  before_meal: "食前",
-  after_meal: "食後",
-  empty_stomach: "空腹時",
-  bedtime: "就寝前",
-};
 
 export default function Home() {
   const methods = useForm<SupplementFormData>({
@@ -874,407 +824,17 @@ export default function Home() {
             aria-label="サプリメント一覧"
           >
             {supplements.map((supplement) => (
-              <AnimatedCard
+              <SupplementCard
                 key={supplement.id}
-                id={`supplement-card-${supplement.id}`}
-                className="w-full max-w-[356px] overflow-hidden border-2 border-white bg-zinc-50 shadow-slate-300 animated-card"
-                tabIndex={0}
-              >
-                <div className="relative w-full h-auto aspect-[3/2]">
-                  {supplement.imageUrl ? (
-                    <Image
-                      src={supplement.imageUrl}
-                      alt={`${supplement.supplement_name}の画像`}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="flex justify-center items-center w-full h-full text-black/50 text-[24px] bg-gray-400"
-                      aria-label="画像なし"
-                    >
-                      no-image
-                    </div>
-                  )}
-                </div>
-
-                <AnimatedCardHeader className="p-0">
-                  <div className="text-center break-all">
-                    <h2 className="py-0.5 px-4 bg-gray-700 text-bold text-sm text-white rounded-b-[40px] truncate">
-                      {supplement.supplement_name}
-                    </h2>
-                  </div>
-                </AnimatedCardHeader>
-
-                <AnimatedCardContent className="flex flex-col gap-2 py-2 px-3">
-                  <div className="flex flex-row flex-wrap gap-4">
-                    <div className="">
-                      <div className="flex border-b-2">
-                        <span className="text-xs border-gray-300 flex">
-                          内容量
-                        </span>
-                        <p className="p-2 pb-1 md:text-lg text-xl font-medium">
-                          {supplement.dosage_left ?? supplement.dosage}{" "}
-                          <span className="text-sm font-mono font-normal">
-                            {supplement.dosage_unit}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="">
-                      <div className="flex border-b-2">
-                        <span className="text-xs border-gray-300 flex">
-                          一回
-                        </span>
-                        <p className="p-2 pb-1 md:text-lg text-xl font-medium ">
-                          {supplement.intake_amount}{" "}
-                          <span className="text-sm font-mono font-normal">
-                            {supplement.intake_unit}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col md:gap-1 gap-1">
-                    <span className="flex-col-reverse text-xs border-gray-300 flex grow">
-                      {supplement.dosage_method === "count"
-                        ? "服用回数"
-                        : "服用タイミング"}
-                    </span>
-                    {supplement.dosage_method === "timing" ? (
-                      <div className="p-1 flex flex-col gap-2">
-                        {/* 時間帯のタイミング */}
-                        {(supplement.timing_morning ||
-                          supplement.timing_noon ||
-                          supplement.timing_night) && (
-                          <div className="flex flex-wrap gap-2">
-                            {supplement.timing_morning && (
-                              <AnimatedButton
-                                id={`${supplement.id}-morning`}
-                                onClick={() =>
-                                  handleTakeDose(supplement.id, "morning")
-                                }
-                                disabled={
-                                  showFeedback ||
-                                  animatingIds.includes(
-                                    `${supplement.id}-morning`
-                                  ) ||
-                                  (!supplement.takenTimings?.morning &&
-                                    ((supplement.dosage_left ??
-                                      supplement.dosage) <= 0 ||
-                                      (supplement.dosage_left ??
-                                        supplement.dosage) <
-                                        supplement.intake_amount))
-                                }
-                                checked={
-                                  supplement.takenTimings?.morning || false
-                                }
-                                label={TIMING_ICONS.morning}
-                                aria-label={`${TIMING_LABELS.morning} ${
-                                  supplement.takenTimings?.morning
-                                    ? "服用済み"
-                                    : "未服用"
-                                }`}
-                                aria-pressed={
-                                  supplement.takenTimings?.morning || false
-                                }
-                              />
-                            )}
-
-                            {supplement.timing_noon && (
-                              <AnimatedButton
-                                id={`${supplement.id}-noon`}
-                                onClick={() =>
-                                  handleTakeDose(supplement.id, "noon")
-                                }
-                                disabled={
-                                  showFeedback ||
-                                  animatingIds.includes(
-                                    `${supplement.id}-noon`
-                                  ) ||
-                                  (!supplement.takenTimings?.noon &&
-                                    ((supplement.dosage_left ??
-                                      supplement.dosage) <= 0 ||
-                                      (supplement.dosage_left ??
-                                        supplement.dosage) <
-                                        supplement.intake_amount))
-                                }
-                                checked={supplement.takenTimings?.noon || false}
-                                label={TIMING_ICONS.noon}
-                                aria-label={`${TIMING_LABELS.noon} ${
-                                  supplement.takenTimings?.noon
-                                    ? "服用済み"
-                                    : "未服用"
-                                }`}
-                                aria-pressed={
-                                  supplement.takenTimings?.noon || false
-                                }
-                              />
-                            )}
-                            {supplement.timing_night && (
-                              <AnimatedButton
-                                id={`${supplement.id}-night`}
-                                onClick={() =>
-                                  handleTakeDose(supplement.id, "night")
-                                }
-                                disabled={
-                                  showFeedback ||
-                                  animatingIds.includes(
-                                    `${supplement.id}-night`
-                                  ) ||
-                                  (!supplement.takenTimings?.night &&
-                                    ((supplement.dosage_left ??
-                                      supplement.dosage) <= 0 ||
-                                      (supplement.dosage_left ??
-                                        supplement.dosage) <
-                                        supplement.intake_amount))
-                                }
-                                checked={
-                                  supplement.takenTimings?.night || false
-                                }
-                                label={TIMING_ICONS.night}
-                                aria-label={`${TIMING_LABELS.night} ${
-                                  supplement.takenTimings?.night
-                                    ? "服用済み"
-                                    : "未服用"
-                                }`}
-                                aria-pressed={
-                                  supplement.takenTimings?.night || false
-                                }
-                              />
-                            )}
-                          </div>
-                        )}
-
-                        {/* 食事関連のタイミングをテキスト表示に変更 */}
-                        <RecommendedIntakeInfo
-                          timings={{
-                            before_meal: supplement.timing_before_meal || false,
-                            after_meal: supplement.timing_after_meal || false,
-                            empty_stomach:
-                              supplement.timing_empty_stomach || false,
-                            bedtime: supplement.timing_bedtime || false,
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="p-1 flex flex-col gap-2">
-                        <div className="flex items-center">
-                          <div className="flex items-center bg-white rounded-full border-2 border-gray-300 shadow-md w-full overflow-hidden h-8">
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                if (
-                                  (supplement.takenCount || 0) > 0 &&
-                                  !showFeedback
-                                ) {
-                                  handleDecreaseDosageCount(supplement.id);
-                                }
-                              }}
-                              onMouseOver={(e) => {
-                                if (
-                                  (supplement.takenCount || 0) > 0 &&
-                                  !showFeedback
-                                ) {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#d1d5db";
-                                }
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "#e5e7eb";
-                              }}
-                              onMouseDown={(e) => {
-                                if (
-                                  (supplement.takenCount || 0) > 0 &&
-                                  !showFeedback
-                                ) {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#9ca3af";
-                                }
-                              }}
-                              onMouseUp={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "#e5e7eb";
-                              }}
-                              disabled={
-                                (supplement.takenCount || 0) <= 0 ||
-                                showFeedback
-                              }
-                              className="flex-none w-8 h-8 p-0 text-gray-600 border-r border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-l-full shadow-inner hover:shadow-md"
-                              style={{
-                                backgroundColor: "#e5e7eb",
-                                boxShadow:
-                                  "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
-                              }}
-                              aria-label="服用回数を減らす"
-                            >
-                              <MdRemove size={16} />
-                            </button>
-
-                            <div
-                              className="flex-1 overflow-x-scroll overflow-y-hidden flex items-center px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden h-full bg-gray-50 touch-pan-x cursor-grab active:cursor-grabbing"
-                              tabIndex={0}
-                              role="region"
-                              aria-label="服用回数履歴"
-                              style={{
-                                WebkitOverflowScrolling: "touch",
-                                scrollbarWidth: "none",
-                              }}
-                              onLoad={(e) => {
-                                // 読み込み時に右端にスクロールする
-                                const div = e.currentTarget;
-                                div.scrollLeft = div.scrollWidth;
-                              }}
-                              onWheel={(e) => {
-                                // Shiftキーを押しながらのホイールは横スクロール
-                                if (e.shiftKey) return;
-
-                                // ホイールイベントを横スクロールに変換
-                                const container = e.currentTarget;
-
-                                // スクロール速度を調整（deltaModifier）
-                                const deltaModifier = 2;
-                                container.scrollLeft +=
-                                  e.deltaY * deltaModifier;
-                              }}
-                            >
-                              <div
-                                className="flex items-center gap-1 w-full justify-end pl-2 pr-1"
-                                style={{
-                                  minWidth:
-                                    (supplement.takenCount || 0) === 0
-                                      ? "100%"
-                                      : `${Math.max(
-                                          (supplement.takenCount || 0) * 30,
-                                          100
-                                        )}px`,
-                                }}
-                              >
-                                {(supplement.takenCount || 0) === 0 ? (
-                                  <div className="text-sm text-gray-500 flex items-center mx-auto px-2">
-                                    未服用
-                                  </div>
-                                ) : (
-                                  Array.from({
-                                    length: supplement.takenCount || 0,
-                                  }).map((_, index) => (
-                                    <div
-                                      key={index}
-                                      className="flex-none w-6 h-6 bg-gray-700 text-white rounded-full flex items-center justify-center text-xs font-medium shadow-sm"
-                                      aria-label={`${index + 1}回目の服用`}
-                                    >
-                                      {index + 1}
-                                    </div>
-                                  ))
-                                )}
-                              </div>
-                            </div>
-
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                if (
-                                  !showFeedback &&
-                                  (supplement.dosage_left ??
-                                    supplement.dosage) >=
-                                    supplement.intake_amount
-                                ) {
-                                  handleIncreaseDosageCount(supplement.id);
-                                }
-                              }}
-                              onMouseOver={(e) => {
-                                if (
-                                  !showFeedback &&
-                                  (supplement.dosage_left ??
-                                    supplement.dosage) >=
-                                    supplement.intake_amount
-                                ) {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#d1d5db";
-                                }
-                              }}
-                              onMouseOut={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "#e5e7eb";
-                              }}
-                              onMouseDown={(e) => {
-                                if (
-                                  !showFeedback &&
-                                  (supplement.dosage_left ??
-                                    supplement.dosage) >=
-                                    supplement.intake_amount
-                                ) {
-                                  e.currentTarget.style.backgroundColor =
-                                    "#9ca3af";
-                                }
-                              }}
-                              onMouseUp={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "#e5e7eb";
-                              }}
-                              disabled={
-                                showFeedback ||
-                                (supplement.dosage_left ?? supplement.dosage) <
-                                  supplement.intake_amount
-                              }
-                              className="flex-none w-8 h-8 p-0 text-gray-600 border-l border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-r-full shadow-inner hover:shadow-md"
-                              style={{
-                                backgroundColor: "#e5e7eb",
-                                boxShadow:
-                                  "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
-                              }}
-                              aria-label="服用回数を増やす"
-                            >
-                              <MdAdd size={16} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {supplement.daily_target_count &&
-                          supplement.daily_target_count > 0 && (
-                            <div className="text-xs text-gray-500 text-right">
-                              目標: {supplement.takenCount || 0} /{" "}
-                              {supplement.daily_target_count} 回
-                            </div>
-                          )}
-
-                        {/* 回数ベースでも推奨服用方法を表示 */}
-                        <RecommendedIntakeInfo
-                          timings={{
-                            before_meal: supplement.timing_before_meal || false,
-                            after_meal: supplement.timing_after_meal || false,
-                            empty_stomach:
-                              supplement.timing_empty_stomach || false,
-                            bedtime: supplement.timing_bedtime || false,
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </AnimatedCardContent>
-
-                <AnimatedCardFooter className="absolute bottom-3 right-3 gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-gray-500 text-gray-700 py-1 px-2 text-xs h-auto"
-                    onClick={() => handleOpenUpdateModal(supplement)}
-                    aria-label={`${supplement.supplement_name}を編集`}
-                  >
-                    編集
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="border-b border-gray-500 text-gray-700 rounded-none p-1 text-xs h-auto"
-                    onClick={() => handleDeleteSupplement(supplement.id)}
-                    aria-label={`${supplement.supplement_name}を削除`}
-                  >
-                    削除
-                  </Button>
-                </AnimatedCardFooter>
-              </AnimatedCard>
+                supplement={supplement}
+                onEdit={handleOpenUpdateModal}
+                onDelete={handleDeleteSupplement}
+                onTakeDose={handleTakeDose}
+                onIncreaseCount={handleIncreaseDosageCount}
+                onDecreaseCount={handleDecreaseDosageCount}
+                showFeedback={showFeedback}
+                animatingIds={animatingIds}
+              />
             ))}
           </section>
         </div>
