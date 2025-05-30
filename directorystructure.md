@@ -6,6 +6,8 @@
 ├── .cursor/ # Cursor 用ルール
 │ └── rules/
 │ └── global.mdc
+├── .husky/ # Git hooks 管理（Husky）
+│ └── pre-commit # コミット前のチェック処理
 ├── docs/ # ドキュメント
 │ └── project-overview.yaml
 ├── functions/ # Firebase Functions（Cloud Functions）
@@ -60,6 +62,7 @@
 ├── cors.json # CORS 設定
 ├── .eslintrc.json # ESLint 設定
 ├── .eslintignore # ESLint 除外
+├── .prettierrc # Prettier コードフォーマッター設定
 ├── .gitattributes
 ├── .gitignore
 ├── .clineignore

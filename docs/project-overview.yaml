@@ -10,6 +10,12 @@ project:
     styling: TailwindCSS 3.3.3
     animation: framer-motion
     form_validation: Zod, React Hook Form
+    development_tools:
+      code_formatting: Prettier ^3.5.3
+      git_hooks: Husky ^8.0.0
+      staged_linting: Lint-Staged ^15.0.2
+      linting: ESLint ^8.48.0
+      type_checking: TypeScript ^5.6.2
 
 architecture:
   directories:
@@ -274,3 +280,47 @@ features:
       型変換に関しては、src/lib/type-guards.ts にAPIレスポンスと
       モデルの変換を行うユーティリティ関数を実装。これによりFirestoreから取得した
       データを安全にアプリケーションの型定義に変換できる。
+
+  - name: 開発効率・コード品質管理
+    description: 開発効率向上とコード品質の自動管理
+    location:
+      - .husky/pre-commit
+      - .prettierrc
+      - package.json (lint-staged設定)
+    functions:
+      - pre-commit: Git コミット前の自動チェック
+      - lint-staged: ステージングされたファイルの自動整形
+      - prettier: コード フォーマッティング
+    details: |
+      コード品質の一貫性を保つため、以下の開発ツールを統合:
+
+      Husky (^8.0.0):
+      - Git フックの管理
+      - コミット前の自動実行処理（pre-commit）
+      - TypeScript 型チェック（npm run build）
+      - Lint-Staged の自動実行
+
+      Lint-Staged (^15.0.2):
+      - ステージングされたファイルのみを対象とした処理
+      - TypeScript/TSX ファイル: ESLint による自動修正 + Prettier による整形
+      - その他のファイル（JS, JSX, JSON, CSS, MD）: Prettier による整形
+
+      Prettier (^3.5.3):
+      - 統一されたコードスタイルの自動適用
+      - 設定内容（.prettierrc）:
+        - セミコロン: 有効
+        - 末尾カンマ: ES5 準拠
+        - シングルクォート: 無効（ダブルクォート使用）
+        - 印刷幅: 80 文字
+        - タブ幅: 2 スペース
+        - タブ文字: 無効（スペース使用）
+
+      この構成により、開発者は以下の恩恵を受けられる:
+      - コミット時の自動的な品質チェック
+      - チーム全体でのコードスタイル統一
+      - 手動でのフォーマット作業削減
+      - TypeScript 型エラーの事前検出
+      - 長期的な保守性の向上
+
+      なお、index.tsx では不要な単位選択肢の削除も同時に実施し、
+      UI の整理とコード品質向上を両立させている。
