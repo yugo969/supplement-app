@@ -4,7 +4,7 @@ project:
   name: supplement-app
   description: サプリメント管理アプリケーション
   tech_stack:
-    framework: Next.js 13.4.19
+    framework: Next.js 13.5.11
     language: TypeScript
     backend: Firebase
     styling: TailwindCSS 3.3.3
@@ -16,6 +16,9 @@ project:
       staged_linting: Lint-Staged ^15.0.2
       linting: ESLint ^8.48.0
       type_checking: TypeScript ^5.6.2
+    security_updates:
+      latest_update: "2024年末: Next.js 13.4.19 → 13.5.11 セキュリティ脆弱性対応"
+      vulnerabilities_fixed: "SSRF、HTTP Request Smuggling、認証バイパス等の重要脆弱性"
 
 architecture:
   directories:
