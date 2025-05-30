@@ -7,6 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "prepare": "husky install"
   },
   "dependencies": {
@@ -27,8 +31,8 @@
     "firebase": "^10.3.1",
     "framer-motion": "^12.9.2",
     "lucide-react": "^0.503.0",
-    "next": "13.4.19",
-    "postcss": "8.4.29",
+    "next": "^15.3.3",
+    "postcss": "^8.5.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-firebase-hooks": "^5.1.1",
