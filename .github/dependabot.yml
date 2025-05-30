@@ -1,36 +1,41 @@
 version: 2
 updates:
-  # npm依存関係の自動更新
+  # npm依存関係の自動更新（セキュリティのみ・月次）
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
       time: "09:00"
       timezone: "Asia/Tokyo"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 2 # PR数を制限
     assignees:
       - "@me"
     reviewers:
       - "@me"
     commit-message:
-      prefix: "deps"
+      prefix: "security"
       include: "scope"
-    # アップデート対象の依存関係タイプ
+    # セキュリティアップデートのみ許可
     allow:
       - dependency-type: "direct"
+        update-types: ["security-update"]
       - dependency-type: "indirect"
-    # セキュリティアップデートは即座に作成
+        update-types: ["security-update"]
+    # 通常のバージョンアップデートは除外
     ignore:
       - dependency-name: "*"
-        update-types: ["version-update:semver-major"]
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
-  # GitHub Actionsの自動更新
+  # GitHub Actionsの自動更新（月次）
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
       time: "09:00"
       timezone: "Asia/Tokyo"
-    open-pull-requests-limit: 2
+    open-pull-requests-limit: 1
