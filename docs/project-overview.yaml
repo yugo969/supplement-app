@@ -20,6 +20,14 @@ project:
       latest_update: "2024年末: Next.js 13.4.19 → 15.3.3、PostCSS 8.4.29 → 8.5.4 セキュリティ脆弱性対応"
       vulnerabilities_fixed: "SSRF、HTTP Request Smuggling、認証バイパス、PostCSS line return parsing error等"
       breaking_change: "Next.js 15へのメジャーアップグレード（破壊的変更含む）"
+      pending_updates:
+        firebase_v11:
+          current_version: "10.13.2"
+          available_version: "11.8.1"
+          moderate_vulnerabilities: 10
+          vulnerability_source: "undici依存関係（Firebase SDK経由）"
+          risk_assessment: "メジャーアップグレード、破壊的変更の可能性あり"
+          recommendation: "別PR対応推奨、慎重な検証が必要"
 
 architecture:
   directories:
@@ -346,6 +354,11 @@ features:
         - 中程度脆弱性は情報表示のみ（個人開発向け設定）
         - 高レベル/重要脆弱性検出時の自動失敗
       - 目的: セキュリティリスクの早期発見と対応
+      - デバッグ機能:
+        - 詳細な脆弱性情報をJSON形式で出力
+        - 重要度別の脆弱性カウント表示
+        - デバッグ結果をアーティファクトとして保存（30日間）
+        - より詳細なエラーレポート機能
 
       ### 依存関係管理（Dependabot）
 
