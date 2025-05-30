@@ -287,12 +287,20 @@ features:
       - .husky/pre-commit
       - .prettierrc
       - package.json (lint-staged設定)
+      - .github/workflows/ci.yml
+      - .github/workflows/security.yml
+      - .github/dependabot.yml
     functions:
       - pre-commit: Git コミット前の自動チェック
       - lint-staged: ステージングされたファイルの自動整形
       - prettier: コード フォーマッティング
+      - CI/CD: Push/PR時の自動品質チェック
+      - security-audit: セキュリティ脆弱性の自動検査
+      - dependabot: 依存関係の自動更新
     details: |
       コード品質の一貫性を保つため、以下の開発ツールを統合:
+
+      ### ローカル開発環境での品質管理
 
       Husky (^8.0.0):
       - Git フックの管理
@@ -315,11 +323,63 @@ features:
         - タブ幅: 2 スペース
         - タブ文字: 無効（スペース使用）
 
+      ### CI/CDパイプライン（GitHub Actions）
+
+      メインCI (.github/workflows/ci.yml):
+      - トリガー: main/developブランチへのpush、またはPR作成時
+      - 実行環境: Ubuntu Latest (Node.js 18.x)
+      - 実行内容:
+        - ESLint による静的解析
+        - TypeScript 型チェック（npm run type-check）
+        - Prettier フォーマットチェック（npm run format:check）
+        - Next.js ビルド確認
+      - キャッシュ: npm依存関係のキャッシュによる高速化
+
+      セキュリティチェック (.github/workflows/security.yml):
+      - トリガー: push/PR + 毎週月曜日午前9時（JST）の定期実行
+      - 実行内容:
+        - npm audit による脆弱性検査（中程度以上）
+        - 高レベル脆弱性検出時の自動失敗
+      - 目的: セキュリティリスクの早期発見と対応
+
+      ### 依存関係管理（Dependabot）
+
+      Dependabot (.github/dependabot.yml):
+      - npm依存関係の自動更新:
+        - スケジュール: 毎週月曜日午前9時（JST）
+        - 対象: 直接依存関係 + 間接依存関係
+        - 制限: メジャーバージョンアップは除外（安全性重視）
+        - PR上限: 5件まで
+      - GitHub Actions の自動更新:
+        - スケジュール: 毎週月曜日午前9時（JST）
+        - PR上限: 2件まで
+      - 設定:
+        - コミットメッセージプレフィックス: "deps"
+        - 自動アサイン・レビュー機能
+        - セキュリティアップデートの優先実行
+      - 注記: 個人開発のため、GitHub Settings > Security & analysis で一時無効化可能
+
+      ### 追加されたnpm scripts
+
+      - type-check: TypeScript型チェック（tsc --noEmit）
+      - format: Prettier自動フォーマット
+      - format:check: Prettierフォーマットチェック
+      - lint:fix: ESLint自動修正
+
+      ### 品質管理の多層構造
+
+      1. **ローカル開発時**: Husky + Lint-Staged による即座のチェック
+      2. **リモートpush/PR時**: GitHub Actions による包括的チェック
+      3. **定期実行**: セキュリティ監査と依存関係更新
+      4. **手動実行**: 開発者による個別スクリプトの実行
+
       この構成により、開発者は以下の恩恵を受けられる:
       - コミット時の自動的な品質チェック
       - チーム全体でのコードスタイル統一
       - 手動でのフォーマット作業削減
       - TypeScript 型エラーの事前検出
+      - セキュリティ脆弱性の早期発見
+      - 依存関係の自動更新による保守負荷軽減（必要に応じて無効化可能）
       - 長期的な保守性の向上
 
       なお、index.tsx では不要な単位選択肢の削除も同時に実施し、

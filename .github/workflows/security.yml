@@ -1,0 +1,40 @@
+name: Security Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # 毎週月曜日の午前9時（JST）に実行
+    - cron: "0 0 * * 1"
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        run: npm audit --audit-level=moderate
+
+      - name: Check for known vulnerabilities
+        run: |
+          if npm audit --audit-level=high --json | grep -q '"total":'; then
+            echo "High severity vulnerabilities found!"
+            npm audit --audit-level=high
+            exit 1
+          else
+            echo "No high severity vulnerabilities found."
+          fi
