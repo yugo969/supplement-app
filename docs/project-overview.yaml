@@ -17,8 +17,8 @@ project:
       linting: ESLint ^8.48.0
       type_checking: TypeScript ^5.6.2
     security_updates:
-      latest_update: "2024年末: Next.js 13.4.19 → 13.5.11 セキュリティ脆弱性対応"
-      vulnerabilities_fixed: "SSRF、HTTP Request Smuggling、認証バイパス等の重要脆弱性"
+      latest_update: "2024年末: Next.js 13.4.19 → 13.5.11、PostCSS 8.4.29 → 8.5.4 セキュリティ脆弱性対応"
+      vulnerabilities_fixed: "SSRF、HTTP Request Smuggling、認証バイパス、PostCSS line return parsing error等"
 
 architecture:
   directories:
