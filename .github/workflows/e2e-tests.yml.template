@@ -1,0 +1,188 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  # 手動実行も可能
+  workflow_dispatch:
+    inputs:
+      test_scope:
+        description: "Test scope to run"
+        required: false
+        default: "critical"
+        type: choice
+        options:
+          - critical
+          - full
+
+jobs:
+  # PR用：重要テストのみ（高速）
+  e2e-critical:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.event.inputs.test_scope == 'critical')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers (Chromium only)
+        run: npx playwright install --with-deps chromium
+
+      - name: Build Next.js application
+        run: npm run build
+
+      - name: Run critical E2E tests
+        run: npx playwright test tests/e2e/auth tests/e2e/supplements tests/e2e/regression/dosage-tracking.spec.ts --project=chromium
+        env:
+          # Firebase テスト環境設定
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          # テスト用認証情報
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-critical-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+  # mainブランチ用：全テスト（徹底的）
+  e2e-full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.test_scope == 'full')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # フルテスト時のみ複数ブラウザ
+        browser: [chromium, firefox] # webkitは削除（不安定なため）
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Build Next.js application
+        run: npm run build
+
+      - name: Run full E2E tests
+        run: npm run test:e2e -- --project=${{ matrix.browser }}
+        env:
+          # Firebase テスト環境設定
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          # テスト用認証情報
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-full-report-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 30
+
+      - name: Upload failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-screenshots-${{ matrix.browser }}
+          path: test-results/**/*-failed-*.png
+          retention-days: 7
+
+  # テスト結果のサマリー生成
+  test-summary:
+    runs-on: ubuntu-latest
+    needs: [e2e-critical, e2e-full]
+    if: always() && (needs.e2e-critical.result != 'skipped' || needs.e2e-full.result != 'skipped')
+
+    steps:
+      - name: Generate test summary
+        run: |
+          echo "# 🧪 E2E Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.e2e-critical.result }}" != "skipped" ]]; then
+            echo "## ⚡ Critical Tests (PR向け高速テスト)" >> $GITHUB_STEP_SUMMARY
+            if [[ "${{ needs.e2e-critical.result }}" == "success" ]]; then
+              echo "✅ **認証・CRUD・服用記録テスト**: 成功" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **認証・CRUD・服用記録テスト**: 失敗" >> $GITHUB_STEP_SUMMARY
+            fi
+            echo "- **実行時間**: ~5分" >> $GITHUB_STEP_SUMMARY
+            echo "- **ブラウザ**: Chromium のみ" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "${{ needs.e2e-full.result }}" != "skipped" ]]; then
+            echo "## 🔄 Full Tests (main/develop向け包括テスト)" >> $GITHUB_STEP_SUMMARY
+            if [[ "${{ needs.e2e-full.result }}" == "success" ]]; then
+              echo "✅ **全99テスト**: 成功" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "❌ **全99テスト**: 失敗" >> $GITHUB_STEP_SUMMARY
+            fi
+            echo "- **実行時間**: ~20分" >> $GITHUB_STEP_SUMMARY
+            echo "- **ブラウザ**: Chromium + Firefox" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "## 💡 テスト戦略" >> $GITHUB_STEP_SUMMARY
+          echo "- **PR**: 重要機能のみ高速テスト（5分）" >> $GITHUB_STEP_SUMMARY
+          echo "- **main/develop**: 全機能包括テスト（20分）" >> $GITHUB_STEP_SUMMARY
+          echo "- **手動実行**: 必要に応じて選択可能" >> $GITHUB_STEP_SUMMARY
+
+  # 失敗時の緊急通知
+  failure-notification:
+    runs-on: ubuntu-latest
+    needs: [e2e-critical, e2e-full]
+    if: failure()
+
+    steps:
+      - name: Notify on critical failure
+        run: |
+          if [[ "${{ needs.e2e-critical.result }}" == "failure" ]]; then
+            echo "::error::🚨 重要機能テストが失敗しました。PRマージを停止し、修正を優先してください。"
+          fi
+          if [[ "${{ needs.e2e-full.result }}" == "failure" ]]; then
+            echo "::warning::⚠️ 包括テストで問題が発見されました。リファクタリング作業前に確認が必要です。"
+          fi

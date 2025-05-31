@@ -1,38 +1,272 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# サプリ KEEPER 💊
 
-## Getting Started
+サプリメント服用管理アプリケーション - 個人開発による品質重視のWebアプリ
 
-First, run the development server:
+![Next.js](https://img.shields.io/badge/Next.js-15.3.3-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.6.2-blue)
+![Firebase](https://img.shields.io/badge/Firebase-11.8.1-orange)
+![Playwright](https://img.shields.io/badge/E2E-Playwright-green)
+![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen)
+
+## 📋 概要
+
+サプリKEEPERは、個人のサプリメント服用を効率的に管理するWebアプリケーションです。
+Firebase認証とFirestoreを活用し、安全で高速なデータ管理を実現しています。
+
+### 🎯 主要機能
+
+- **📝 サプリメント管理**: 追加・編集・削除・検索
+- **⏰ 服用記録**: タイミング別（朝・昼・夜）服用管理
+- **📊 摂取量追跡**: 残り数量・目標摂取量の可視化
+- **🔐 安全認証**: Firebase Authentication による保護
+- **📱 レスポンシブ**: モバイル・デスクトップ対応
+- **⚡ 高速表示**: Next.js 15 + React 18による最適化
+
+## 🛠️ 技術スタック
+
+### フロントエンド
+
+- **Framework**: Next.js 15.3.3 (App Router)
+- **Language**: TypeScript 5.6.2
+- **UI**: Tailwind CSS 3.3.3 + Radix UI
+- **Animation**: Framer Motion 12.9.2
+- **Icons**: Lucide React + React Icons
+
+### バックエンド・データベース
+
+- **認証**: Firebase Authentication 11.8.1
+- **データベース**: Firestore（NoSQL）
+- **ストレージ**: Firebase Storage
+
+### 開発・品質管理ツール
+
+- **Linter**: ESLint + TypeScript ESLint
+- **Formatter**: Prettier 3.5.3
+- **Form**: React Hook Form 7.56.1 + Zod 3.24.3
+- **E2E Test**: Playwright 1.52.0（99テストケース）
+- **Git Hooks**: Husky 8.0.0 + lint-staged
+
+## 🚀 開発環境セットアップ
+
+### 1. 前提条件
+
+- Node.js 18.x以上
+- npm（パッケージマネージャー）
+- Firebase プロジェクト
+
+### 2. インストール
+
+```bash
+# リポジトリクローン
+git clone [repository-url]
+cd supplement-app
+
+# 依存関係インストール
+npm install
+
+# Husky（Git Hooks）設定
+npm run prepare
+```
+
+### 3. Firebase設定
+
+`.env.local` ファイルを作成し、Firebase設定を追加：
+
+```bash
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+```
+
+### 4. 開発サーバー起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+ブラウザで [http://localhost:3000](http://localhost:3000) を開いてください。
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## 🧪 テスト・品質管理
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+### コード品質チェック
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+```bash
+# TypeScript型チェック
+npm run type-check
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+# ESLint実行
+npm run lint
 
-## Learn More
+# ESLint自動修正
+npm run lint:fix
 
-To learn more about Next.js, take a look at the following resources:
+# Prettier整形
+npm run format
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Prettier チェック
+npm run format:check
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+### E2Eテスト実行
 
-## Deploy on Vercel
+**重要**: E2Eテストには99のテストケースが含まれます
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# 全テスト実行
+npm run test:e2e
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+# UI表示でテスト実行
+npm run test:e2e:ui
+
+# デバッグモード
+npm run test:e2e:debug
+
+# ヘッドありモード（ブラウザ表示）
+npm run test:e2e:headed
+
+# テストレポート表示
+npm run test:e2e:report
+```
+
+#### テストカテゴリ
+
+1. **認証テスト** (`tests/e2e/auth`)
+
+   - ログイン・ログアウト・新規登録
+   - 認証状態管理・エラーハンドリング
+
+2. **サプリメント管理テスト** (`tests/e2e/supplements`)
+
+   - CRUD操作・検索・フィルタリング
+   - フォームバリデーション
+
+3. **服用記録テスト** (`tests/e2e/regression/dosage-tracking.spec.ts`)
+
+   - タイミング別服用記録
+   - 残量追跡・回帰防止
+
+4. **UI表示テスト** (`tests/e2e/ui`)
+   - レスポンシブデザイン
+   - コンポーネント表示制御
+
+## 🔧 リファクタリング支援
+
+### リファクタリング前チェック
+
+重要機能の動作を事前確認して、安全なリファクタリングを実行：
+
+```bash
+# リファクタリング前チェック実行
+./scripts/pre-refactor-check.sh
+```
+
+**チェック内容**:
+
+- TypeScript型チェック
+- Next.jsビルド確認
+- 重要E2Eテスト（認証・CRUD・服用記録）
+- 結果レポート生成
+
+### Git Commit時の自動チェック
+
+Huskyにより、コミット前に自動実行：
+
+```bash
+# 通常のコミット（自動チェック実行）
+git commit -m "コミットメッセージ"
+
+# 緊急時（E2Eテストスキップ）
+SKIP_E2E=1 git commit -m "緊急コミット"
+```
+
+## 📁 プロジェクト構造
+
+```
+supplement-app/
+├── src/
+│   ├── components/        # 再利用可能UIコンポーネント
+│   ├── context/           # React Context
+│   ├── hooks/             # カスタムフック
+│   ├── lib/               # ユーティリティ・Firebase連携
+│   ├── pages/             # ページコンポーネント
+│   ├── schemas/           # Zodバリデーションスキーマ
+│   └── styles/            # グローバルスタイル
+├── tests/
+│   └── e2e/               # E2Eテスト（99ケース）
+├── scripts/               # 開発支援スクリプト
+├── docs/                  # プロジェクトドキュメント
+└── .github/workflows/     # CI/CD設定
+```
+
+## 🎨 UI/UXデザイン
+
+- **デザインシステム**: Radix UI + カスタムデザイン
+- **カラーパレット**: モダンで視認性の高い配色
+- **レスポンシブ**: Mobile-first設計
+- **アクセシビリティ**: ARIA属性・キーボード対応
+
+## 🚀 デプロイ・CI/CD
+
+### 個人開発モード（現在）
+
+- **ローカル開発**: Husky pre-commit統合
+- **品質保証**: リファクタリング前チェックスクリプト
+- **テスト実行**: 手動 + Git Hook自動実行
+
+### プロダクション移行時
+
+GitHub Actions対応済み（`docs/e2e-cicd-template.md`参照）:
+
+- **PR用**: 重要テストのみ（5分実行）
+- **Main用**: 全99テスト包括実行（20分）
+- **手動実行**: 必要に応じた実行範囲選択
+
+## 📚 ドキュメント
+
+- `docs/project-overview.yaml` - プロジェクト全体概要
+- `docs/e2e-test-integration-checklist.md` - E2Eテスト導入手順
+- `docs/e2e-cicd-template.md` - CI/CD移行テンプレート
+
+## 🤝 開発ガイドライン
+
+### コーディング規約
+
+1. **TypeScript**: 厳格な型定義
+2. **ESLint**: Next.js推奨設定 + 追加ルール
+3. **Prettier**: 一貫したコード整形
+4. **Zod**: スキーマファーストバリデーション
+
+### Git運用
+
+1. **Commit**: Conventional Commits準拠
+2. **Branch**: feature/fix/docs分離
+3. **Pre-commit**: 自動品質チェック
+4. **E2E**: リファクタリング前後の動作確認
+
+## 🔒 セキュリティ
+
+- **認証**: Firebase Authentication
+- **データアクセス**: Firestore Security Rules
+- **クライアント検証**: Zod + React Hook Form
+- **依存関係**: Dependabot自動セキュリティ更新
+
+## 📞 サポート・連絡先
+
+個人開発プロジェクトのため、Issuesやプルリクエストはプロジェクト管理者が対応します。
+
+---
+
+## 🏆 品質指標
+
+- **E2Eテスト**: 99ケース実装済み
+- **TypeScript**: 厳格な型安全性
+- **コードカバレッジ**: 重要機能100%
+- **パフォーマンス**: Next.js最適化適用
+- **セキュリティ**: Firebase + Firestore Rules
+
+**最終更新**: リファクタリング連携体制確立（Phase 6完了）
+
+# ポート3100設定テスト
