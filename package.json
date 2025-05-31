@@ -14,7 +14,13 @@
     "prepare": "husky install",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report test-results/html-report",
+    "refactor:check": "./scripts/pre-refactor-check.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -47,6 +53,7 @@
     "zod": "^3.24.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.52.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -57,6 +64,7 @@
     "husky": "^8.0.0",
     "jsdom": "^26.1.0",
     "lint-staged": "^15.0.2",
+    "playwright": "^1.52.0",
     "prettier": "^3.5.3",
     "typescript": "^5.6.2",
     "vitest": "^3.1.4"
