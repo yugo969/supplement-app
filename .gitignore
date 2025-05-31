@@ -52,3 +52,9 @@ repomix-output.xml
 .clinerules
 memory_bank
 .clineignore
+
+# Playwright E2E testing
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
