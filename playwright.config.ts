@@ -30,7 +30,7 @@ export default defineConfig({
   // 全テスト共通設定
   use: {
     // ベースURL（開発サーバー）
-    baseURL: "http://localhost:3000",
+    baseURL: "http://localhost:3100",
 
     // スクリーンショット設定
     screenshot: "only-on-failure",
@@ -80,8 +80,8 @@ export default defineConfig({
 
   // 開発サーバー設定
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
+    command: "PORT=3100 npm run dev",
+    url: "http://localhost:3100",
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },
