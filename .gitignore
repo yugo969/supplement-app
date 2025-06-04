@@ -58,3 +58,6 @@ memory_bank
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# AI参照ドキュメント分離手順書（機密情報のため非公開）
+ai-docs-separation-guide.md
