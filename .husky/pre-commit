@@ -7,9 +7,32 @@ npm run type-check
 # lint-staged実行（ESLint + Prettier）
 npx lint-staged
 
-# E2Eテスト実行 - 緊急回避可能
+# 変更されたファイルを検査してE2Eテストの必要性を判定
+check_if_e2e_needed() {
+    # git diffでステージングされたファイルを取得
+    changed_files=$(git diff --cached --name-only)
+
+    # 変更がない場合はE2E不要
+    if [ -z "$changed_files" ]; then
+        return 1
+    fi
+
+    # .cursorサブモジュール以外の変更があるかチェック
+    non_cursor_changes=$(echo "$changed_files" | grep -v "^\.cursor" || true)
+
+    # .cursor以外の変更があればE2E必要
+    if [ -n "$non_cursor_changes" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# E2Eテスト実行判定
 if [ "$SKIP_E2E" = "1" ]; then
     echo "⚠️ E2Eテストをスキップしました (SKIP_E2E=1)"
+elif ! check_if_e2e_needed; then
+    echo "🔄 .cursorサブモジュールのみの変更のため、E2Eテストを自動スキップ"
 else
     echo "🧪 重要機能E2Eテスト実行中..."
     # 安定したテストのみ実行（認証 + 服用記録回帰のみ）

@@ -61,6 +61,10 @@ Firebase認証とFirestoreを活用し、安全で高速なデータ管理を実
 git clone [repository-url]
 cd supplement-app
 
+# サブモジュール初期化（.cursor設定ファイル用）
+git submodule init
+git submodule update
+
 # 依存関係インストール
 npm install
 
@@ -195,6 +199,10 @@ SKIP_E2E=1 git commit -m "緊急コミット"
 
 ```
 supplement-app/
+├── .cursor/               # AI設定（Gitサブモジュール）
+│   ├── docs/             # AI・開発ドキュメント
+│   ├── rules/            # CursorAI設定ルール
+│   └── .cursorrules      # AI支援設定
 ├── src/
 │   ├── components/        # 再利用可能UIコンポーネント
 │   ├── context/           # React Context
@@ -206,7 +214,6 @@ supplement-app/
 ├── tests/
 │   └── e2e/               # E2Eテスト（99ケース）
 ├── scripts/               # 開発支援スクリプト
-├── docs/                  # プロジェクトドキュメント
 └── .github/workflows/     # CI/CD設定
 ```
 
@@ -279,3 +286,69 @@ GitHub Actions対応済み（`docs/e2e-cicd-template.md`参照）:
 **最終更新**: リファクタリング連携体制確立（Phase 6完了）
 
 # ポート3100設定テスト
+
+## ⚙️ .cursor サブモジュール管理
+
+### 概要
+
+`.cursor`ディレクトリは**Gitサブモジュール**として分離管理されています：
+
+- **目的**: AI設定とプロジェクトコードの履歴分離
+- **利点**: 個人設定の独立管理、リポジトリサイズ削減
+- **管理**: 別リポジトリ（cursor-config）で管理
+
+### 基本的な管理方法
+
+```bash
+# .cursor内での設定変更
+cd .cursor
+git add .
+git commit -m "Update AI assistant settings"
+git push
+
+# メインリポジトリでの同期（推奨：整合性重視）
+cd ..
+git add .cursor
+git commit -m "Update .cursor submodule to latest"
+git push
+```
+
+### 新しい環境での初期セットアップ
+
+```bash
+# リポジトリクローン時
+git clone [repository-url]
+cd supplement-app
+
+# サブモジュール初期化
+git submodule init
+git submodule update
+```
+
+### 詳細な管理方法
+
+.cursorサブモジュールの詳細な管理方法は、サブモジュール内のドキュメントを参照：
+
+- `.cursor/docs/cursor-submodule-management.md` - 完全な管理ガイド
+
+## 📚 ドキュメント管理
+
+### ドキュメント配置方針
+
+```yaml
+メインリポジトリ:
+  - README.md: プロジェクト概要・セットアップ手順
+  - 技術仕様・アーキテクチャドキュメント（将来追加予定）
+
+.cursorサブモジュール (.cursor/docs/):
+  - AI支援設定・開発ルール
+  - ディレクトリ構造・技術スタック詳細
+  - E2Eテスト統合ガイド
+  - 開発ワークフロー・チェックリスト
+```
+
+### ドキュメント作成時の注意点
+
+1. **AI・開発設定関連** → `.cursor/docs/` に配置
+2. **プロジェクト技術仕様** → メインリポジトリ`docs/`（今後作成予定）
+3. **混在回避**: 関心の分離を厳密に遵守
