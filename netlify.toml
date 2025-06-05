@@ -1,7 +1,8 @@
 [build]
   # 基本的なビルド設定
   publish = ".next"
-  command = "npm run build"
+  # ビルドコマンド内で.gitmodulesを一時的にリネームし、ビルド後に元に戻す
+  command = "mv .gitmodules .gitmodules.bak && npm run build && mv .gitmodules.bak .gitmodules"
 
   # サブモジュールを無視する設定
   [build.environment]
@@ -13,10 +14,10 @@
 
 # ビルド設定の詳細
 [context.production]
-  command = "npm ci && npm run build"
+  command = "mv .gitmodules .gitmodules.bak && npm ci && npm run build && mv .gitmodules.bak .gitmodules"
 
 [context.deploy-preview]
-  command = "npm ci && npm run build"
+  command = "mv .gitmodules .gitmodules.bak && npm ci && npm run build && mv .gitmodules.bak .gitmodules"
 
 [context.branch-deploy]
-  command = "npm ci && npm run build"
+  command = "mv .gitmodules .gitmodules.bak && npm ci && npm run build && mv .gitmodules.bak .gitmodules"
