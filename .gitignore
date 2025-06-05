@@ -61,3 +61,6 @@ memory_bank
 
 # AI参照ドキュメント分離手順書（機密情報のため非公開）
 ai-docs-separation-guide.md
+
+# リファクタリング支援ツール（一時ファイル）
+.refactor-baseline
