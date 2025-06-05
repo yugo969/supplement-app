@@ -1,0 +1,123 @@
+name: Deploy to Netlify (Production)
+
+on:
+  push:
+    branches:
+      - main # 本番デプロイ
+  pull_request:
+    branches:
+      - main # PR用プレビューデプロイ
+  # 手動実行
+  workflow_dispatch:
+    inputs:
+      deploy_environment:
+        description: "Deploy environment"
+        required: false
+        default: "preview"
+        type: choice
+        options:
+          - preview
+          - production
+
+jobs:
+  deploy-to-netlify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      # サブモジュールを除外してチェックアウト
+      - name: Checkout repository (no submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: "false" # サブモジュールは取得しない
+
+      # .gitmodulesから.cursorサブモジュールを除外
+      - name: Remove .cursor submodule from .gitmodules
+        run: |
+          if [ -f .gitmodules ]; then
+            echo "📝 Original .gitmodules content:"
+            cat .gitmodules
+            echo "✂️ Removing .cursor submodule from .gitmodules..."
+
+            # .cursorサブモジュールのエントリを削除
+            sed -i '/^\[submodule "\.cursor"\]/,/^$/d' .gitmodules
+
+            echo "✅ Modified .gitmodules content:"
+            cat .gitmodules
+
+            # ファイルが空になった場合は削除
+            if [ ! -s .gitmodules ]; then
+              echo "🗑️ .gitmodules is empty, removing file..."
+              rm .gitmodules
+            fi
+          else
+            echo "ℹ️ No .gitmodules file found."
+          fi
+
+      # Node.js環境のセットアップ
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          cache: "npm"
+
+      # 依存関係のインストール
+      - name: Install dependencies
+        run: npm ci
+
+      # TypeScript型チェック
+      - name: Type check
+        run: npm run build
+        env:
+          # Firebase環境設定（本番用）
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+
+      # ビルド成果物の確認
+      - name: Verify build output
+        run: |
+          echo "📦 Build output structure:"
+          ls -la .next/
+          echo "📊 Build size summary:"
+          du -sh .next/
+
+      # Netlifyへデプロイ
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v3
+        with:
+          publish-dir: "./.next"
+          production-deploy: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: |
+            Deploy from GitHub Actions
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+            Trigger: ${{ github.event_name }}
+          enable-pull-request-comment: true
+          enable-commit-comment: true
+          overwrites-pull-request-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 10
+
+      # デプロイ結果のサマリー
+      - name: Deployment summary
+        run: |
+          echo "# 🚀 Netlify Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📊 Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'Production' || 'Preview' }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Quality Assurance" >> $GITHUB_STEP_SUMMARY
+          echo "- **Submodule Handling**: .cursor development config excluded from production" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Verification**: TypeScript compilation successful" >> $GITHUB_STEP_SUMMARY
+          echo "- **Firebase Integration**: Environment variables configured" >> $GITHUB_STEP_SUMMARY
+          echo "- **Production Ready**: Clean deployment without development dependencies" >> $GITHUB_STEP_SUMMARY

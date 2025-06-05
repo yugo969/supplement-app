@@ -1,23 +1,7 @@
 [build]
   # 基本的なビルド設定
   publish = ".next"
-  # ビルドコマンド内で.gitmodulesを一時的にリネームし、ビルド後に元に戻す
-  command = "mv .gitmodules .gitmodules.bak && npm run build && mv .gitmodules.bak .gitmodules"
+  command = "npm run build"
 
-  # サブモジュールを無視する設定
-  [build.environment]
-    NETLIFY_SKIP_SUBMODULES = "true"
-
-# カスタムビルドコマンド（サブモジュール初期化をスキップ）
-[build.processing]
-  skip_processing = false
-
-# ビルド設定の詳細
-[context.production]
-  command = "mv .gitmodules .gitmodules.bak && npm ci && npm run build && mv .gitmodules.bak .gitmodules"
-
-[context.deploy-preview]
-  command = "mv .gitmodules .gitmodules.bak && npm ci && npm run build && mv .gitmodules.bak .gitmodules"
-
-[context.branch-deploy]
-  command = "mv .gitmodules .gitmodules.bak && npm ci && npm run build && mv .gitmodules.bak .gitmodules"
+# GitHub Actionsでデプロイするため、複雑なビルドコマンドは不要
+# サブモジュール関連の問題もGitHub Actions側で解決
