@@ -64,3 +64,7 @@ ai-docs-separation-guide.md
 
 # リファクタリング支援ツール（一時ファイル）
 .refactor-baseline
+
+# Netlify
+.netlify/
+dist/

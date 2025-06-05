@@ -1,0 +1,22 @@
+[build]
+  # 基本的なビルド設定
+  publish = ".next"
+  command = "npm run build"
+
+  # サブモジュールを無視する設定
+  [build.environment]
+    NETLIFY_SKIP_SUBMODULES = "true"
+
+# カスタムビルドコマンド（サブモジュール初期化をスキップ）
+[build.processing]
+  skip_processing = false
+
+# ビルド設定の詳細
+[context.production]
+  command = "npm ci && npm run build"
+
+[context.deploy-preview]
+  command = "npm ci && npm run build"
+
+[context.branch-deploy]
+  command = "npm ci && npm run build"
