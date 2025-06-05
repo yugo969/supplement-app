@@ -1,0 +1,7 @@
+[build]
+  # 基本的なビルド設定
+  publish = ".next"
+  command = "npm run build"
+
+# GitHub Actionsでデプロイするため、複雑なビルドコマンドは不要
+# サブモジュール関連の問題もGitHub Actions側で解決
