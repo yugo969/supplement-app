@@ -10,6 +10,8 @@ const SignupPage: React.FC = () => {
   const {
     register,
     handleSubmit,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -18,6 +20,8 @@ const SignupPage: React.FC = () => {
   const [authError, setAuthError] = useState<string | null>(null);
 
   const onSubmit = async (data: SignupFormData) => {
+    setAuthError(null);
+    clearErrors();
     try {
       await firebase
         .auth()
@@ -25,10 +29,32 @@ const SignupPage: React.FC = () => {
       router.push("/");
     } catch (error: any) {
       console.error(error);
-      if (error.code === "auth/email-already-in-use") {
-        setAuthError("このメールアドレスは既に使用されています");
-      } else {
-        setAuthError("アカウント作成中にエラーが発生しました");
+      switch (error?.code) {
+        case "auth/email-already-in-use":
+          setError("email", {
+            type: "server",
+            message: "このメールアドレスは既に使用されています",
+          });
+          break;
+        case "auth/invalid-email":
+          setError("email", {
+            type: "server",
+            message: "メールアドレスの形式が正しくありません",
+          });
+          break;
+        case "auth/weak-password":
+          setError("password", {
+            type: "server",
+            message: "パスワードが弱すぎます。より強いものを設定してください",
+          });
+          break;
+        case "auth/too-many-requests":
+          setAuthError(
+            "試行回数が上限に達しました。しばらく待ってから再度お試しください。"
+          );
+          break;
+        default:
+          setAuthError("アカウント作成中にエラーが発生しました");
       }
     }
   };
@@ -49,8 +75,9 @@ const SignupPage: React.FC = () => {
           </h1>
           {authError && (
             <div
-              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+              className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
               role="alert"
+              aria-live="assertive"
             >
               <span className="block sm:inline">{authError}</span>
             </div>

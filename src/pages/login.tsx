@@ -3,6 +3,7 @@ import firebase from "../lib/firebaseClient";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { useState } from "react";
 
 type FormData = {
   email: string;
@@ -13,18 +14,52 @@ const LoginPage: React.FC = () => {
   const {
     register,
     handleSubmit,
+    setError,
+    clearErrors,
     formState: { errors },
   } = useForm<FormData>();
   const router = useRouter();
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const onSubmit = async (data: FormData) => {
+    setAuthError(null);
+    clearErrors();
     try {
       await firebase
         .auth()
         .signInWithEmailAndPassword(data.email, data.password);
       router.push("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      switch (error?.code) {
+        case "auth/user-not-found":
+        case "auth/wrong-password":
+        case "auth/invalid-credential":
+          setError("password", {
+            type: "server",
+            message:
+              "メールアドレスまたはパスワードが正しくありません",
+          });
+          break;
+        case "auth/invalid-email":
+          setError("email", {
+            type: "server",
+            message: "メールアドレスの形式が正しくありません",
+          });
+          break;
+        case "auth/too-many-requests":
+          setAuthError(
+            "試行回数が上限に達しました。しばらく待ってから再度お試しください。"
+          );
+          break;
+        case "auth/user-disabled":
+          setAuthError(
+            "このアカウントは無効化されています。管理者にお問い合わせください。"
+          );
+          break;
+        default:
+          setAuthError("ログインに失敗しました。時間をおいて再度お試しください。");
+      }
     }
   };
 
@@ -42,6 +77,15 @@ const LoginPage: React.FC = () => {
           >
             ログイン
           </h1>
+          {authError && (
+            <div
+              className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
+              role="alert"
+              aria-live="assertive"
+            >
+              {authError}
+            </div>
+          )}
           <div className="flex flex-col grow">
             <label
               htmlFor="email-field"
@@ -55,6 +99,10 @@ const LoginPage: React.FC = () => {
               className="w-full rounded border bg-gray-50 px-3 py-2 text-gray-800 outline-none ring-gray-400 transition duration-100 focus:ring-2 focus:ring-offset-2"
               {...register("email", {
                 required: "メールアドレスを入力してください",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "メールアドレスの形式が正しくありません",
+                },
               })}
               aria-invalid={errors.email ? "true" : "false"}
               aria-describedby={errors.email ? "email-error" : undefined}
@@ -78,6 +126,10 @@ const LoginPage: React.FC = () => {
               type="password"
               {...register("password", {
                 required: "パスワードを入力してください",
+                minLength: {
+                  value: 6,
+                  message: "パスワードは6文字以上で入力してください",
+                },
               })}
               aria-invalid={errors.password ? "true" : "false"}
               aria-describedby={errors.password ? "password-error" : undefined}
