@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 interface HeaderSectionProps {
   onAddSupplement: () => void;
   onLogout: () => void;
+  isGroupEditMode?: boolean;
 }
 
 const HeaderSection: React.FC<HeaderSectionProps> = ({
   onAddSupplement,
   onLogout,
+  isGroupEditMode = false,
 }) => {
   return (
     <header className="flex md:sticky md:top-2 bg-white/40 z-10 justify-between items-center rounded-md shadow-sm shadow-gray-200 md:p-6 p-3">
@@ -19,8 +21,14 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
       <div className="flex gap-3">
         <Button
           variant="outline"
-          className="text-gray-700 border-gray-500 font-semibold hover:bg-gray-100 shadow-sm max-md:hidden"
+          className={`font-semibold shadow-sm max-md:hidden ${
+            isGroupEditMode
+              ? "text-gray-400 border-gray-300 bg-gray-100 cursor-not-allowed opacity-70"
+              : "text-gray-700 border-gray-500 hover:bg-gray-100"
+          }`}
           onClick={onAddSupplement}
+          disabled={isGroupEditMode}
+          aria-disabled={isGroupEditMode}
           aria-label="サプリを追加"
         >
           <span>サプリ追加</span>

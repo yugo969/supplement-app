@@ -2,7 +2,7 @@ import firebase from "@/lib/firebaseClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MdChevronLeft, MdChevronRight } from "react-icons/md";
+import { MdEdit } from "react-icons/md";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   SupplementData,
@@ -321,7 +321,7 @@ export default function Home() {
   };
 
   const handleSelectGroupChip = (groupId: string) => {
-    setActiveGroupId(groupId);
+    setActiveGroupId((prev) => (prev === groupId ? null : groupId));
   };
 
   const updateGroupChipScrollState = useCallback(() => {
@@ -478,40 +478,41 @@ export default function Home() {
       }`}
     >
       <main className="relative">
-        <FloatingAddButton onClick={handleOpenModal} />
+        <FloatingAddButton
+          onClick={handleOpenModal}
+          hidden={isGroupEditMode}
+        />
 
-        <div className="relative flex flex-col w-screen h-full md:p-10 p-4 gap-6">
+        <div className="relative flex flex-col w-screen h-full md:p-10 p-4">
           <HeaderSection
             onAddSupplement={handleOpenModal}
             onLogout={handleLogout}
+            isGroupEditMode={isGroupEditMode}
           />
 
           <section
-            className={`rounded-md p-3 md:p-4 transition-colors ${
-              isGroupEditMode ? "bg-gray-300/70" : "bg-white/50"
+            className={`max-md:mx-[-1rem] max-md:w-[calc(100%+2rem)] rounded-md px-3 py-[20px] md:px-4 transition-colors ${
+              isGroupEditMode ? "bg-gray-300/70" : "bg-transparent"
             }`}
             aria-label="グループ操作"
           >
-            <div className="flex items-start gap-2">
+            <div className="flex items-center gap-2">
               <div className="relative flex-1 min-w-0">
                 {canScrollGroupLeft && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      groupChipContainerRef.current?.scrollBy({
-                        left: -160,
-                        behavior: "smooth",
-                      })
-                    }
-                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full border border-gray-300 bg-white/95 text-gray-700 shadow-sm flex items-center justify-center"
-                    aria-label="左にスクロール"
-                  >
-                    <MdChevronLeft size={18} />
-                  </button>
+                  <div
+                    className="pointer-events-none absolute left-0 top-0 z-10 h-full w-6 bg-gradient-to-r from-zinc-200/90 to-transparent"
+                    aria-hidden="true"
+                  />
+                )}
+                {canScrollGroupRight && (
+                  <div
+                    className="pointer-events-none absolute right-0 top-0 z-10 h-full w-6 bg-gradient-to-l from-zinc-200/90 to-transparent"
+                    aria-hidden="true"
+                  />
                 )}
                 <div
                   ref={groupChipContainerRef}
-                  className="flex gap-2 overflow-x-auto whitespace-nowrap pb-1 px-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  className="flex gap-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 >
                   {groupChips.map((group) => {
                     const isActive = activeGroupId === group.id;
@@ -527,10 +528,10 @@ export default function Home() {
                         }}
                         type="button"
                         onClick={() => handleSelectGroupChip(group.id)}
-                        className={`flex-none whitespace-nowrap px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                        className={`flex-none h-[35px] whitespace-nowrap px-4 rounded-full text-[14px] font-medium transition-all duration-150 shadow-[0_2px_6px_rgba(15,23,42,0.16)] active:translate-y-[1px] active:shadow-[0_1px_3px_rgba(15,23,42,0.12)] ${
                           isActive
-                            ? "bg-gray-700 text-white border-gray-700"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                            ? "bg-gray-600 text-white"
+                            : "bg-white text-gray-700 hover:bg-gray-100"
                         }`}
                         aria-pressed={isActive}
                       >
@@ -544,49 +545,7 @@ export default function Home() {
                     </p>
                   )}
                 </div>
-                {canScrollGroupRight && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      groupChipContainerRef.current?.scrollBy({
-                        left: 160,
-                        behavior: "smooth",
-                      })
-                    }
-                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-7 w-7 rounded-full border border-gray-300 bg-white/95 text-gray-700 shadow-sm flex items-center justify-center"
-                    aria-label="右にスクロール"
-                  >
-                    <MdChevronRight size={18} />
-                  </button>
-                )}
               </div>
-              {(isGroupEditMode || !!activeGroupId) && (
-                <div className="shrink-0 flex items-center gap-2">
-                  <button
-                    type="button"
-                    className={`px-3 py-2 rounded-md text-sm font-medium border ${
-                      isGroupEditMode
-                        ? "bg-gray-700 text-white border-gray-700"
-                        : "bg-white text-gray-700 border-gray-400"
-                    }`}
-                    onClick={handleToggleGroupEditMode}
-                  >
-                    {isGroupEditMode ? "登録" : "編集"}
-                  </button>
-                  {!!activeGroupId && (
-                    <button
-                      type="button"
-                      className="px-3 py-2 rounded-md text-sm font-medium border bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                      onClick={() => {
-                        setActiveGroupId(null);
-                        setIsGroupEditMode(false);
-                      }}
-                    >
-                      解除
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
           </section>
 
@@ -610,6 +569,54 @@ export default function Home() {
             />
           )}
         </div>
+
+        {activeGroupId && !isGroupEditMode && (
+          <>
+            <div
+              className="fixed right-4 z-30 md:hidden"
+              style={{ bottom: "calc(1.5rem + 4rem + 1rem)" }}
+            >
+              <button
+                type="button"
+                className="h-11 rounded-full px-4 text-[15px] font-semibold bg-white text-gray-700 hover:bg-gray-100 transition-all duration-150 shadow-[0_4px_12px_rgba(15,23,42,0.2)] active:translate-y-[1px] active:shadow-[0_2px_6px_rgba(15,23,42,0.16)] whitespace-nowrap flex items-center gap-1.5"
+                onClick={handleToggleGroupEditMode}
+              >
+                <MdEdit size={18} aria-hidden="true" />
+                <span>リスト編集</span>
+              </button>
+            </div>
+            <div className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2 px-4 max-md:hidden">
+              <button
+                type="button"
+                className="h-11 px-6 rounded-full text-[16px] font-semibold bg-white text-gray-700 hover:bg-gray-100 transition-all duration-150 shadow-[0_4px_12px_rgba(15,23,42,0.2)] active:translate-y-[1px] active:shadow-[0_2px_6px_rgba(15,23,42,0.16)] whitespace-nowrap"
+                onClick={handleToggleGroupEditMode}
+              >
+                リスト編集
+              </button>
+            </div>
+          </>
+        )}
+
+        {isGroupEditMode && (
+          <div className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2 px-4">
+            <div className="flex items-center justify-center gap-3">
+              <button
+                type="button"
+                className="h-11 px-6 rounded-full text-[16px] font-semibold bg-gray-700 text-white transition-all duration-150 shadow-[0_4px_12px_rgba(15,23,42,0.2)] active:translate-y-[1px] active:shadow-[0_2px_6px_rgba(15,23,42,0.16)] whitespace-nowrap"
+                onClick={handleToggleGroupEditMode}
+              >
+                登録
+              </button>
+              <button
+                type="button"
+                className="h-11 px-6 rounded-full text-[16px] font-semibold bg-white text-gray-700 hover:bg-gray-100 transition-all duration-150 shadow-[0_4px_12px_rgba(15,23,42,0.2)] active:translate-y-[1px] active:shadow-[0_2px_6px_rgba(15,23,42,0.16)] whitespace-nowrap"
+                onClick={() => setIsGroupEditMode(false)}
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        )}
       </main>
 
       {isModalOpen && (
