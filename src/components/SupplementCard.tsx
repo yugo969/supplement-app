@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { MdAdd, MdRemove } from "react-icons/md";
+import { MdAdd, MdCheck, MdRemove } from "react-icons/md";
 import { Button } from "@/components/ui/button";
 import { AnimatedButton } from "@/components/ui/animated-button";
 import {
@@ -230,6 +230,11 @@ interface SupplementCardProps {
   onTakeDose: (supplementId: string, timing: string) => void;
   onIncreaseCount: (supplementId: string) => void;
   onDecreaseCount: (supplementId: string) => void;
+  groupBadges?: { id: string; name: string }[];
+  onGroupBadgeClick?: (groupId: string) => void;
+  isGroupEditMode?: boolean;
+  isAssignedToTargetGroup?: boolean;
+  onToggleGroupMembership?: (supplementId: string) => void;
   showFeedback: boolean;
   animatingIds: string[];
 }
@@ -241,6 +246,11 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
   onTakeDose,
   onIncreaseCount,
   onDecreaseCount,
+  groupBadges = [],
+  onGroupBadgeClick = () => {},
+  isGroupEditMode = false,
+  isAssignedToTargetGroup = false,
+  onToggleGroupMembership = () => {},
   showFeedback,
   animatingIds,
 }) => {
@@ -288,6 +298,7 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
         supplement.intake_amount;
 
       const isDisabled =
+        isGroupEditMode ||
         showFeedback ||
         animatingIds.includes(`${supplement.id}-${timing}`) ||
         (!isTaken && isInsufficientDosage); // 未服用で残り容量不足の場合のみ無効
@@ -311,6 +322,10 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
   // 回数ベースの場合のカウンター
   const renderCountControls = () => {
     const currentCount = supplement.takenCount || 0;
+    const targetCount = supplement.daily_target_count || 0;
+    const completionRate =
+      targetCount > 0 ? Math.round((currentCount / targetCount) * 100) : 0;
+    const isCompleted = targetCount > 0 && currentCount >= targetCount;
 
     return (
       <div className="w-full">
@@ -318,7 +333,7 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
           <button
             type="button"
             onClick={() => onDecreaseCount(supplement.id)}
-            disabled={showFeedback || currentCount <= 0}
+            disabled={isGroupEditMode || showFeedback || currentCount <= 0}
             className="flex-none w-10 h-10 p-0 text-gray-600 border-r border-gray-300 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-l-full shadow-inner hover:shadow-md"
             style={{
               backgroundColor: "#e5e7eb",
@@ -376,6 +391,7 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
             type="button"
             onClick={() => onIncreaseCount(supplement.id)}
             disabled={
+              isGroupEditMode ||
               showFeedback ||
               (supplement.dosage_left ?? supplement.dosage) <
                 supplement.intake_amount
@@ -398,19 +414,53 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
         </div>
 
         {supplement.daily_target_count && supplement.daily_target_count > 0 && (
-          <div className="text-xs text-gray-500 text-right mt-1">
-            目標: {currentCount} / {supplement.daily_target_count} 回
+          <div className="flex justify-between items-center text-xs text-gray-500 mt-1">
+            <div
+              className={`font-medium ${isCompleted ? "text-green-600" : "text-gray-600"}`}
+            >
+              {completionRate}% 達成
+            </div>
+            <div>
+              目標: {currentCount} / {supplement.daily_target_count} 回
+            </div>
           </div>
         )}
       </div>
     );
   };
 
+  // 回数ベースで100%達成しているかチェック
+  const isCountCompleted =
+    isCountBased &&
+    supplement.daily_target_count &&
+    supplement.daily_target_count > 0 &&
+    (supplement.takenCount || 0) >= supplement.daily_target_count;
+
   return (
     <AnimatedCard
       id={`supplement-card-${supplement.id}`}
-      className="w-full max-w-[356px] overflow-hidden border-2 border-white bg-zinc-50 shadow-slate-300 animated-card"
+      className={`relative w-full max-w-[356px] overflow-hidden border-2 bg-zinc-50 shadow-slate-300 animated-card transition-all duration-300 ${
+        isGroupEditMode
+          ? isAssignedToTargetGroup
+            ? "border-emerald-500 shadow-emerald-200"
+            : "border-gray-300 grayscale-[0.45] opacity-80"
+          : isCountCompleted
+            ? "border-green-400 shadow-green-200"
+            : "border-white"
+      } ${isGroupEditMode ? "cursor-pointer" : ""}`}
       tabIndex={0}
+      onClick={() => {
+        if (isGroupEditMode) {
+          onToggleGroupMembership(supplement.id);
+        }
+      }}
+      onKeyDown={(event: React.KeyboardEvent<HTMLElement>) => {
+        if (!isGroupEditMode) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onToggleGroupMembership(supplement.id);
+        }
+      }}
     >
       <div className="relative w-full h-auto" style={{ aspectRatio: "3/1.8" }}>
         {supplement.imageUrl ? (
@@ -418,6 +468,7 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
             src={supplement.imageUrl}
             alt={`${supplement.supplement_name}の画像`}
             fill
+            sizes="(max-width: 768px) 100vw, 356px"
             className="object-cover"
           />
         ) : (
@@ -458,24 +509,53 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
         </div>
       </div>
 
-      <AnimatedCardContent className="flex flex-col gap-3 p-4">
+      <AnimatedCardContent className="relative flex flex-col gap-3 p-4">
+        {isGroupEditMode && (
+          <div className="absolute inset-0 z-10 pointer-events-none bg-gray-200/55" />
+        )}
+        {groupBadges.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto whitespace-nowrap pb-1">
+            {groupBadges.map((group) => (
+              <button
+                key={`${supplement.id}-${group.id}`}
+                type="button"
+                className={`flex-none whitespace-nowrap text-xs px-2 py-1 rounded-full border ${
+                  isGroupEditMode
+                    ? "border-gray-300 text-gray-600 bg-gray-100 cursor-default"
+                    : "border-gray-400 text-gray-700 bg-white hover:bg-gray-100"
+                }`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (!isGroupEditMode) {
+                    onGroupBadgeClick(group.id);
+                  }
+                }}
+                disabled={isGroupEditMode}
+                aria-label={`${group.name}グループ`}
+              >
+                {group.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* 容量情報 */}
         <div className="flex justify-center items-center gap-8">
           <span className="flex items-baseline gap-1">
-            <span className="text-gray-500 text-sm flex-shrink-0">残り:</span>
-            <span className="text-gray-800 text-lg font-medium overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <span className="text-gray-500 text-base flex-shrink-0">残り:</span>
+            <span className="text-gray-800 text-xl font-medium overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {supplement.dosage_left ?? supplement.dosage}
             </span>
-            <span className="text-gray-600 text-sm flex-shrink-0">
+            <span className="text-gray-600 text-base flex-shrink-0">
               {supplement.dosage_unit}
             </span>
           </span>
           <span className="flex items-baseline gap-1">
-            <span className="text-gray-500 text-sm flex-shrink-0">1回:</span>
-            <span className="text-gray-800 text-lg font-medium overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            <span className="text-gray-500 text-base flex-shrink-0">1回:</span>
+            <span className="text-gray-800 text-xl font-medium overflow-x-auto whitespace-nowrap [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
               {supplement.intake_amount}
             </span>
-            <span className="text-gray-600 text-sm flex-shrink-0">
+            <span className="text-gray-600 text-base flex-shrink-0">
               {supplement.intake_unit}
             </span>
           </span>
@@ -496,6 +576,7 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
                   after_meal: supplement.timing_after_meal || false,
                   empty_stomach: supplement.timing_empty_stomach || false,
                   bedtime: supplement.timing_bedtime || false,
+                  as_needed: supplement.timing_as_needed || false,
                 }}
               />
             </div>
@@ -512,6 +593,7 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
                   after_meal: supplement.timing_after_meal || false,
                   empty_stomach: supplement.timing_empty_stomach || false,
                   bedtime: supplement.timing_bedtime || false,
+                  as_needed: supplement.timing_as_needed || false,
                 }}
               />
             </div>
@@ -519,26 +601,46 @@ const SupplementCard: React.FC<SupplementCardProps> = ({
         </div>
       </AnimatedCardContent>
 
-      <AnimatedCardFooter className="absolute bottom-3 right-3 gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-gray-500 text-gray-700 py-1 px-2 text-xs h-auto"
-          onClick={() => onEdit(supplement)}
-          aria-label={`${supplement.supplement_name}を編集`}
+      {!isGroupEditMode && (
+        <AnimatedCardFooter className="absolute bottom-3 right-3 gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-gray-500 text-gray-700 py-1 px-2 text-xs h-auto"
+            onClick={() => onEdit(supplement)}
+            aria-label={`${supplement.supplement_name}を編集`}
+          >
+            編集
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="border-b border-gray-500 text-gray-700 rounded-none p-1 text-xs h-auto"
+            onClick={() => onDelete(supplement.id)}
+            aria-label={`${supplement.supplement_name}を削除`}
+          >
+            削除
+          </Button>
+        </AnimatedCardFooter>
+      )}
+
+      {isGroupEditMode && (
+        <button
+          type="button"
+          className={`absolute bottom-3 right-3 z-30 w-9 h-9 rounded-full border-2 flex items-center justify-center transition-colors ${
+            isAssignedToTargetGroup
+              ? "bg-emerald-600 border-emerald-600 text-white"
+              : "bg-white/90 border-gray-500 text-gray-600"
+          }`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleGroupMembership(supplement.id);
+          }}
+          aria-label={`${supplement.supplement_name}のグループ所属を切り替える`}
         >
-          編集
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="border-b border-gray-500 text-gray-700 rounded-none p-1 text-xs h-auto"
-          onClick={() => onDelete(supplement.id)}
-          aria-label={`${supplement.supplement_name}を削除`}
-        >
-          削除
-        </Button>
-      </AnimatedCardFooter>
+          <MdCheck size={20} aria-hidden="true" />
+        </button>
+      )}
     </AnimatedCard>
   );
 };

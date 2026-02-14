@@ -26,6 +26,7 @@ const mockSupplement: SupplementData = {
   timing_after_meal: false,
   timing_empty_stomach: false,
   timing_bedtime: false,
+  timing_as_needed: false,
   takenTimings: {
     morning: false,
     noon: false,
@@ -54,6 +55,7 @@ const mockCountBasedSupplement: SupplementData = {
   timing_after_meal: false,
   timing_empty_stomach: false,
   timing_bedtime: false,
+  timing_as_needed: false,
   daily_target_count: 3,
   takenCount: 2,
   imageUrl: "https://example.com/omega3.jpg",

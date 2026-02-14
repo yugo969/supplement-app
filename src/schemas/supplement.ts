@@ -18,7 +18,14 @@ export type { SupplementFormData };
 export type SupplementData = SupplementFormData & {
   id: string; // Firestoreのドキュメントid
   imageUrl: string;
+  groupIds?: string[];
   dosage_left?: number; // 服用状況更新後の残量
   lastTakenDate?: string; // 最後に服用した日付
   shouldResetTimings?: boolean; // 日付変更によるリセットが必要かどうか
+};
+
+export type SupplementGroup = {
+  id: string;
+  name: string;
+  isSystem?: boolean;
 };

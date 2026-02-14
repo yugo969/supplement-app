@@ -17,6 +17,7 @@ const TIMING_ICONS = {
   after_meal: <MdRestaurant size={18} />,
   empty_stomach: <MdFreeBreakfast size={18} />,
   bedtime: <MdBed size={18} />,
+  as_needed: <MdInfoOutline size={18} />,
 };
 
 // タイミングラベル設定
@@ -25,6 +26,7 @@ const TIMING_LABELS = {
   after_meal: "食後",
   empty_stomach: "空腹時",
   bedtime: "就寝前",
+  as_needed: "頓服",
 };
 
 // 説明文
@@ -37,6 +39,8 @@ const TIMING_DESCRIPTIONS = {
     "空腹時（食間）に服用することで、より効率的に吸収されます。食事から2時間以上経過した時間帯が最適です。",
   bedtime:
     "就寝前に服用することで、体内での作用時間を最大化します。就寝30分前の服用が推奨されます。",
+  as_needed:
+    "必要な時に服用する方法です。症状が出た時や、必要と感じた時に服用してください。",
 };
 
 type RecommendedIntakeInfoProps = {
@@ -45,13 +49,15 @@ type RecommendedIntakeInfoProps = {
     after_meal: boolean;
     empty_stomach: boolean;
     bedtime: boolean;
+    as_needed?: boolean;
   };
 };
 
 const RecommendedIntakeInfo: React.FC<RecommendedIntakeInfoProps> = ({
   timings,
 }) => {
-  const { before_meal, after_meal, empty_stomach, bedtime } = timings;
+  const { before_meal, after_meal, empty_stomach, bedtime, as_needed } =
+    timings;
   const [isExpanded, setIsExpanded] = useState(false);
   const [activePopup, setActivePopup] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -59,13 +65,14 @@ const RecommendedIntakeInfo: React.FC<RecommendedIntakeInfoProps> = ({
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   const hasActiveTimings =
-    before_meal || after_meal || empty_stomach || bedtime;
+    before_meal || after_meal || empty_stomach || bedtime || as_needed;
 
   const activeTimings = [
     before_meal && "before_meal",
     after_meal && "after_meal",
     empty_stomach && "empty_stomach",
     bedtime && "bedtime",
+    as_needed && "as_needed",
   ].filter(Boolean) as (keyof typeof TIMING_LABELS)[];
 
   // カードコンテナの参照を取得
@@ -131,7 +138,7 @@ const RecommendedIntakeInfo: React.FC<RecommendedIntakeInfoProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-1 text-xs text-gray-600"
+        className="flex items-center justify-center gap-1 text-xs text-gray-600"
       >
         <button
           onClick={toggleExpand}
@@ -160,7 +167,7 @@ const RecommendedIntakeInfo: React.FC<RecommendedIntakeInfoProps> = ({
             className="overflow-visible mt-1 relative"
             ref={contentRef}
           >
-            <div className="flex flex-wrap gap-1.5 bg-gray-200 p-2 rounded-md shadow-sm z-10 relative">
+            <div className="flex flex-wrap justify-center gap-1.5 bg-gray-200 p-2 rounded-md shadow-sm z-10 relative">
               {activeTimings.map((timing) => (
                 <div key={timing} className="relative z-10">
                   <motion.button

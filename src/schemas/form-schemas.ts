@@ -51,6 +51,7 @@ export const supplementFormSchema = z
     timing_after_meal: z.boolean(),
     timing_empty_stomach: z.boolean(),
     timing_bedtime: z.boolean(),
+    timing_as_needed: z.boolean(),
     daily_target_count: z
       .union([z.string(), z.number()])
       .optional()

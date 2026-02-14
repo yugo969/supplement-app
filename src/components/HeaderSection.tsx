@@ -11,7 +11,7 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
   onLogout,
 }) => {
   return (
-    <header className="flex md:sticky md:top-2 bg-white/80 z-10 justify-between items-center rounded-md shadow-md shadow-slate-400 md:p-6 p-3">
+    <header className="flex md:sticky md:top-2 bg-white/40 z-10 justify-between items-center rounded-md shadow-sm shadow-gray-200 md:p-6 p-3">
       <h1 className="flex items-center sm:gap-2 text-gray-600 md:text-xl text-lg">
         <MdOutlineMedication size={40} aria-hidden="true" />
         <span className="font-bold leading-6">サプリ KEEPER</span>

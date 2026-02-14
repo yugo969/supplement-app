@@ -19,6 +19,22 @@ import {
 const maxWidth = 552;
 const maxHeight = 366;
 
+const isTemporaryImageSource = (src: string) =>
+  src.startsWith("data:") || src.startsWith("blob:");
+
+const convertImageSourceToFile = async (src: string): Promise<File> => {
+  const response = await fetch(src);
+  if (!response.ok) {
+    throw new Error("画像データの取得に失敗しました");
+  }
+
+  const blob = await response.blob();
+  const extension = blob.type.split("/")[1] || "jpg";
+  return new File([blob], `supplement-${Date.now()}.${extension}`, {
+    type: blob.type || "image/jpeg",
+  });
+};
+
 interface UseSupplementOperationsProps {
   supplements: SupplementData[];
   setSupplements: React.Dispatch<React.SetStateAction<SupplementData[]>>;
@@ -28,6 +44,8 @@ interface UseSupplementOperationsProps {
     React.SetStateAction<SupplementData | null>
   >;
   setUploadedImage: React.Dispatch<React.SetStateAction<string | null>>;
+  selectedGroupIds: string[];
+  setSelectedGroupIds: React.Dispatch<React.SetStateAction<string[]>>;
   setSelectedUnit: React.Dispatch<React.SetStateAction<string>>;
   setSelectedDosageMethod: React.Dispatch<React.SetStateAction<DosageMethod>>;
   setShowInfoDetails: React.Dispatch<React.SetStateAction<boolean>>;
@@ -47,6 +65,8 @@ export const useSupplementOperations = ({
   selectedSupplement,
   setSelectedSupplement,
   setUploadedImage,
+  selectedGroupIds,
+  setSelectedGroupIds,
   setSelectedUnit,
   setSelectedDosageMethod,
   setShowInfoDetails,
@@ -76,11 +96,13 @@ export const useSupplementOperations = ({
       timing_after_meal: false,
       timing_empty_stomach: false,
       timing_bedtime: false,
+      timing_as_needed: false,
       daily_target_count: 1,
       meal_timing: "none",
     });
     setSelectedUnit("錠");
     setSelectedDosageMethod("timing");
+    setSelectedGroupIds([]);
     setIsModalOpen(false);
   };
 
@@ -111,19 +133,25 @@ export const useSupplementOperations = ({
     const dosage = Number(data.dosage);
     const intake_amount = Number(data.intake_amount);
     let imageUrl = uploadedImage;
-    if (data.image && data.image[0]) {
+    if (uploadedImage && isTemporaryImageSource(uploadedImage)) {
+      const imageFile = await convertImageSourceToFile(uploadedImage);
+      imageUrl = await uploadImage(imageFile);
+    } else if (data.image && data.image[0]) {
       imageUrl = await uploadImage(data.image[0]);
     }
 
-    // 服用タイミングフィールドが含まれていることを確認
+    const isTimingMode = (data.dosage_method || "timing") === "timing";
+
+    // countモードで朝昼夜フラグが残ると意図しないシステムグループ表示になるため保存時に正規化する
     const timingFields = {
-      timing_morning: !!data.timing_morning,
-      timing_noon: !!data.timing_noon,
-      timing_night: !!data.timing_night,
-      timing_before_meal: !!data.timing_before_meal,
-      timing_after_meal: !!data.timing_after_meal,
-      timing_empty_stomach: !!data.timing_empty_stomach,
-      timing_bedtime: !!data.timing_bedtime,
+      timing_morning: isTimingMode ? !!data.timing_morning : false,
+      timing_noon: isTimingMode ? !!data.timing_noon : false,
+      timing_night: isTimingMode ? !!data.timing_night : false,
+      timing_before_meal: isTimingMode ? !!data.timing_before_meal : false,
+      timing_after_meal: isTimingMode ? !!data.timing_after_meal : false,
+      timing_empty_stomach: isTimingMode ? !!data.timing_empty_stomach : false,
+      timing_bedtime: isTimingMode ? !!data.timing_bedtime : false,
+      timing_as_needed: isTimingMode ? !!data.timing_as_needed : false,
     };
 
     // dosage_methodがundefinedの場合は'timing'をデフォルト値として使用
@@ -133,6 +161,7 @@ export const useSupplementOperations = ({
       dosage,
       intake_amount,
       imageUrl,
+      groupIds: selectedGroupIds,
       dosage_method: data.dosage_method || "timing",
     };
     if ("image" in supplementData) {
@@ -203,6 +232,7 @@ export const useSupplementOperations = ({
     setValue("timing_after_meal", supplement.timing_after_meal);
     setValue("timing_empty_stomach", supplement.timing_empty_stomach);
     setValue("timing_bedtime", supplement.timing_bedtime);
+    setValue("timing_as_needed", supplement.timing_as_needed || false);
     setValue("meal_timing", mealTiming);
 
     if (supplement.daily_target_count) {
@@ -210,6 +240,7 @@ export const useSupplementOperations = ({
     }
 
     setUploadedImage(supplement.imageUrl);
+    setSelectedGroupIds(supplement.groupIds || []);
   };
 
   const handleDeleteSupplement = async (id: string) => {
@@ -262,6 +293,10 @@ export const useSupplementOperations = ({
 
   const handleImageDelete = () => {
     setUploadedImage(null);
+  };
+
+  const handleImageUpdate = (croppedImageUrl: string) => {
+    setUploadedImage(croppedImageUrl);
   };
 
   const handleUnitChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -472,6 +507,7 @@ export const useSupplementOperations = ({
     handleDeleteSupplement,
     handleImageChange,
     handleImageDelete,
+    handleImageUpdate,
     handleUnitChange,
     handleIncreaseDosageCount,
     handleDecreaseDosageCount,

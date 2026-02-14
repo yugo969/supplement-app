@@ -11,5 +11,14 @@ service cloud.firestore {
       allow read, update, delete: if request.auth.uid != null &&
                                    resource.data.userId == request.auth.uid;
     }
+
+    // supplementGroups コレクションに対するルール
+    match /supplementGroups/{groupId} {
+      allow create: if request.auth.uid != null &&
+                    request.resource.data.userId == request.auth.uid;
+
+      allow read, update, delete: if request.auth.uid != null &&
+                                   resource.data.userId == request.auth.uid;
+    }
   }
 }

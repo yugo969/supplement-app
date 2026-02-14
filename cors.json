@@ -6,9 +6,12 @@
     "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "X-Firebase-Storage-Version"]
   },
   {
-    "origin": ["https://illustrious-squirrel-757f31.netlify.app"],
+    "origin": [
+      "https://illustrious-squirrel-757f31.netlify.app",
+      "https://elf-alive-fairly.ngrok-free.app"
+    ],
     "method": ["GET", "POST", "PUT", "DELETE"],
     "maxAgeSeconds": 3600,
     "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "X-Firebase-Storage-Version"]
-  },
+  }
 ]
