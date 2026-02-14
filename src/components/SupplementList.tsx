@@ -8,9 +8,7 @@ interface SupplementListProps {
   onTakeDose: (supplementId: string, timing: string) => Promise<void>;
   onIncreaseCount: (supplementId: string) => void;
   onDecreaseCount: (supplementId: string) => void;
-  resolveGroupBadges: (
-    supplement: SupplementData
-  ) => {
+  resolveGroupBadges: (supplement: SupplementData) => {
     id: string;
     name: string;
   }[];
