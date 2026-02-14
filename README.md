@@ -234,7 +234,7 @@ supplement-app/
 
 ### プロダクション移行時
 
-GitHub Actions対応済み（`docs/e2e-cicd-template.md`参照）:
+GitHub Actions対応済み（`.cursor/docs/e2e-cicd-template.md`参照）:
 
 - **PR用**: 重要テストのみ（5分実行）
 - **Main用**: 全99テスト包括実行（20分）
@@ -242,9 +242,10 @@ GitHub Actions対応済み（`docs/e2e-cicd-template.md`参照）:
 
 ## 📚 ドキュメント
 
-- `docs/project-overview.yaml` - プロジェクト全体概要
-- `docs/e2e-test-integration-checklist.md` - E2Eテスト導入手順
-- `docs/e2e-cicd-template.md` - CI/CD移行テンプレート
+- `.cursor/docs/project-overview.yaml` - プロジェクト全体概要
+- `.cursor/docs/uiux-improvement-log.md` - UI/UX改善の計画・実装ログ
+- `.cursor/docs/e2e-test-integration-checklist.md` - E2Eテスト導入手順
+- `.cursor/docs/e2e-cicd-template.md` - CI/CD移行テンプレート
 
 ## 🤝 開発ガイドライン
 
