@@ -55,6 +55,7 @@ export default function Home() {
       timing_after_meal: false,
       timing_empty_stomach: false,
       timing_bedtime: false,
+      timing_as_needed: false,
       daily_target_count: 1,
       meal_timing: "none",
     },
