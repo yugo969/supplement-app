@@ -25,6 +25,7 @@ import EmptyStateCard from "@/components/EmptyStateCard";
 import {
   addSupplementGroup,
   deleteSupplementGroup,
+  getSupplements,
   getSupplementGroups,
   toggleSupplementGroupMembership,
 } from "@/lib/firestore";
@@ -384,23 +385,59 @@ export default function Home() {
       return;
     }
 
-    const results = await Promise.allSettled(
-      changes.map((change) =>
-        toggleSupplementGroupMembership(
+    const appliedChanges: Array<{
+      supplementId: string;
+      shouldAssign: boolean;
+    }> = [];
+
+    for (const change of changes) {
+      try {
+        await toggleSupplementGroupMembership(
           change.supplementId,
           targetGroupId,
           change.shouldAssign
-        )
-      )
-    );
+        );
+        appliedChanges.push(change);
+      } catch (error) {
+        const rollbackResults = await Promise.allSettled(
+          appliedChanges.map((applied) =>
+            toggleSupplementGroupMembership(
+              applied.supplementId,
+              targetGroupId,
+              !applied.shouldAssign
+            )
+          )
+        );
 
-    const hasFailure = results.some((result) => result.status === "rejected");
-    if (hasFailure) {
-      restoreGroupEditSnapshot();
-      showNotification({
-        message: "グループ更新に失敗したため変更を元に戻しました",
-      });
-      return;
+        const rollbackFailed = rollbackResults.some(
+          (result) => result.status === "rejected"
+        );
+
+        if (rollbackFailed) {
+          try {
+            const latestSupplements = await getSupplements();
+            setSupplements(latestSupplements);
+            showNotification({
+              message:
+                "グループ更新の一部反映に失敗しました。最新状態に再同期しました",
+            });
+          } catch (syncError) {
+            showNotification({
+              message:
+                "グループ更新に失敗しました。画面を再読み込みして状態を確認してください",
+            });
+          }
+        } else {
+          restoreGroupEditSnapshot();
+          showNotification({
+            message: "グループ更新に失敗したため変更を元に戻しました",
+          });
+        }
+
+        setIsGroupEditMode(false);
+        setGroupEditSnapshot({});
+        return;
+      }
     }
 
     setIsGroupEditMode(false);
