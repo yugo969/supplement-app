@@ -1,4 +1,5 @@
-import { MdOutlineMedication, MdOutlineAddBox } from "react-icons/md";
+import { MdOutlineMedication } from "react-icons/md";
+import { FiLogOut, FiPlusSquare } from "react-icons/fi";
 import { Button } from "@/components/ui/button";
 
 interface HeaderSectionProps {
@@ -20,11 +21,11 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
       </h1>
       <div className="flex gap-3">
         <Button
-          variant="outline"
+          variant="ghost"
           className={`font-semibold shadow-sm max-md:hidden ${
             isGroupEditMode
-              ? "text-gray-400 border-gray-300 bg-gray-100 cursor-not-allowed opacity-70"
-              : "text-gray-700 border-gray-500 hover:bg-gray-100"
+              ? "text-gray-400 bg-gray-100 cursor-not-allowed opacity-70"
+              : "text-gray-700 hover:bg-white/60"
           }`}
           onClick={onAddSupplement}
           disabled={isGroupEditMode}
@@ -32,15 +33,16 @@ const HeaderSection: React.FC<HeaderSectionProps> = ({
           aria-label="サプリを追加"
         >
           <span>サプリ追加</span>
-          <MdOutlineAddBox size={24} aria-hidden="true" />
+          <FiPlusSquare size={20} aria-hidden="true" />
         </Button>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="text-gray-500 border-gray-400 hover:bg-gray-100"
+          className="text-gray-600 hover:bg-white/60 inline-flex items-center gap-1.5"
           onClick={onLogout}
           aria-label="ログアウト"
         >
+          <FiLogOut size={16} aria-hidden="true" />
           ログアウト
         </Button>
       </div>

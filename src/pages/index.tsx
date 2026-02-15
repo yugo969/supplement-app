@@ -2,7 +2,7 @@ import firebase from "@/lib/firebaseClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "react-hook-form";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MdEdit } from "react-icons/md";
+import { MdOutlineBookmarkBorder } from "react-icons/md";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   SupplementData,
@@ -574,24 +574,33 @@ export default function Home() {
           <>
             <div
               className="fixed right-4 z-30 md:hidden"
-              style={{ bottom: "calc(1.5rem + 4rem + 1rem)" }}
+              style={{ bottom: "calc(1.5rem + 4rem + 4px)" }}
             >
               <button
                 type="button"
-                className="h-11 rounded-full px-4 text-[15px] font-semibold bg-white text-gray-700 hover:bg-gray-100 transition-all duration-150 shadow-[0_4px_12px_rgba(15,23,42,0.2)] active:translate-y-[1px] active:shadow-[0_2px_6px_rgba(15,23,42,0.16)] whitespace-nowrap flex items-center gap-1.5"
+                className="h-16 w-16 p-0 rounded-full bg-transparent shadow-none flex items-center justify-center text-gray-600 hover:text-gray-700"
                 onClick={handleToggleGroupEditMode}
+                aria-label="リスト編集"
               >
-                <MdEdit size={18} aria-hidden="true" />
-                <span>リスト編集</span>
+                <MdOutlineBookmarkBorder
+                  size={34}
+                  className="drop-shadow-[0_2px_5px_rgba(15,23,42,0.18)]"
+                  aria-hidden="true"
+                />
               </button>
             </div>
             <div className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2 px-4 max-md:hidden">
               <button
                 type="button"
-                className="h-11 px-6 rounded-full text-[16px] font-semibold bg-white text-gray-700 hover:bg-gray-100 transition-all duration-150 shadow-[0_4px_12px_rgba(15,23,42,0.2)] active:translate-y-[1px] active:shadow-[0_2px_6px_rgba(15,23,42,0.16)] whitespace-nowrap"
+                className="h-11 px-6 rounded-full text-[16px] font-semibold bg-white text-gray-700 hover:bg-gray-100 transition-colors shadow-[0_4px_12px_rgba(15,23,42,0.2)] whitespace-nowrap inline-flex items-center gap-2"
                 onClick={handleToggleGroupEditMode}
+                aria-label="リスト編集"
               >
-                リスト編集
+                <MdOutlineBookmarkBorder
+                  size={20}
+                  aria-hidden="true"
+                />
+                <span>リスト編集</span>
               </button>
             </div>
           </>
