@@ -343,6 +343,7 @@ export default function Home() {
       activeGroupId === UNGROUPED_GROUP_ID ||
       activeGroupId.startsWith("system-")
     ) {
+      restoreGroupEditSnapshot();
       setIsGroupEditMode(false);
       setGroupEditSnapshot({});
       return;
