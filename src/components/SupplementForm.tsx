@@ -37,6 +37,7 @@ import {
 } from "@/schemas/supplement";
 import { motion } from "framer-motion";
 import ImageCropDialog from "@/components/ImageCropDialog";
+import { GROUP_NAME_MAX_LENGTH } from "@/constants/groups";
 
 // カスタムSVGアイコンコンポーネント
 const MorningIcon = ({ size = 24 }: { size?: number }) => (
@@ -247,7 +248,6 @@ const TIMING_LABELS = {
   noon: "昼",
   night: "夜",
 };
-const GROUP_NAME_MAX_LENGTH = 12;
 
 interface SupplementFormProps {
   isOpen: boolean;

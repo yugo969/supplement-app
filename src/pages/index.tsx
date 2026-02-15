@@ -29,6 +29,7 @@ import {
   toggleSupplementGroupMembership,
 } from "@/lib/firestore";
 import { useNotification } from "@/lib/useNotification";
+import { GROUP_NAME_MAX_LENGTH } from "@/constants/groups";
 
 const SYSTEM_GROUPS: SupplementGroup[] = [
   { id: "system-morning", name: "朝", isSystem: true },
@@ -36,7 +37,6 @@ const SYSTEM_GROUPS: SupplementGroup[] = [
   { id: "system-night", name: "夜", isSystem: true },
 ];
 const UNGROUPED_GROUP_ID = "ungrouped";
-const GROUP_NAME_MAX_LENGTH = 12;
 
 export default function Home() {
   const methods = useForm<SupplementFormData>({
@@ -74,6 +74,7 @@ export default function Home() {
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [showInfoDetails, setShowInfoDetails] = useState(false);
+  const [isSupplementsLoading, setIsSupplementsLoading] = useState(true);
   const [customGroups, setCustomGroups] = useState<SupplementGroup[]>([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [isGroupEditMode, setIsGroupEditMode] = useState(false);
@@ -90,7 +91,7 @@ export default function Home() {
   const { user, loading } = useAuth();
 
   // データ管理（日付変更監視とデータ取得・リセット）
-  useDataManagement({ user, setSupplements });
+  useDataManagement({ user, setSupplements, setIsSupplementsLoading });
 
   // useNotificationHandlingカスタムフック
   const {
@@ -253,6 +254,7 @@ export default function Home() {
         {
           label: "キャンセル",
           callback: () => {
+            restoreGroupEditSnapshot();
             setIsGroupEditMode(false);
             setGroupEditSnapshot({});
             showNotification({
@@ -527,7 +529,7 @@ export default function Home() {
     }
   };
 
-  if (loading) {
+  if (loading || isSupplementsLoading) {
     return <LoadingState />;
   }
 

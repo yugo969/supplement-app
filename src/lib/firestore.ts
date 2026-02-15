@@ -4,9 +4,9 @@ import {
   convertToSupplementDataArray,
 } from "./type-guards";
 import { SupplementData, SupplementGroup } from "@/schemas/supplement";
+import { GROUP_NAME_MAX_LENGTH } from "@/constants/groups";
 
 const firestore = firebase.firestore();
-const GROUP_NAME_MAX_LENGTH = 12;
 
 // supplement-appのコレクションとサブコレクションを参照
 const getSupplementsCollection = () => {
