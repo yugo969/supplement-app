@@ -62,6 +62,7 @@ export default function Home() {
   const { setValue } = methods;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [supplements, setSupplements] = useState<SupplementData[]>([]);
+  const [isSupplementsLoaded, setIsSupplementsLoaded] = useState(false);
   const [selectedSupplement, setSelectedSupplement] =
     useState<null | SupplementData>(null);
 
@@ -86,7 +87,7 @@ export default function Home() {
   const { user, loading } = useAuth();
 
   // データ管理（日付変更監視とデータ取得・リセット）
-  useDataManagement({ user, setSupplements });
+  useDataManagement({ user, setSupplements, setIsSupplementsLoaded });
 
   // useNotificationHandlingカスタムフック
   const {
@@ -467,7 +468,7 @@ export default function Home() {
     }
   };
 
-  if (loading) {
+  if (loading || (!!user && !isSupplementsLoaded)) {
     return <LoadingState />;
   }
 

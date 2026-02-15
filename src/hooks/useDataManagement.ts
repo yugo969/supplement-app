@@ -9,16 +9,24 @@ import {
 interface UseDataManagementProps {
   user: any;
   setSupplements: React.Dispatch<React.SetStateAction<SupplementData[]>>;
+  setIsSupplementsLoaded: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const useDataManagement = ({
   user,
   setSupplements,
+  setIsSupplementsLoaded,
 }: UseDataManagementProps) => {
   // 初回ロード時のデータ取得とリセット処理
   useEffect(() => {
-    if (user) {
-      getSupplements().then((data) => {
+    if (!user) {
+      setIsSupplementsLoaded(false);
+      return;
+    }
+
+    setIsSupplementsLoaded(false);
+    getSupplements()
+      .then((data) => {
         // サプリメントデータに日付変更フラグがあれば処理する
         const updatedData = data.map(async (supplement) => {
           if (supplement.shouldResetTimings) {
@@ -47,9 +55,11 @@ export const useDataManagement = ({
         Promise.all(updatedData).then((result) => {
           setSupplements(result);
         });
+      })
+      .finally(() => {
+        setIsSupplementsLoaded(true);
       });
-    }
-  }, [user, setSupplements]);
+  }, [user, setSupplements, setIsSupplementsLoaded]);
 
   // 定期的に日付をチェックして変更があればリロード
   useEffect(() => {
