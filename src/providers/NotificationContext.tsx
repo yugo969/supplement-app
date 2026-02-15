@@ -95,7 +95,12 @@ export const NotificationProvider: React.FC<Props> = ({ children }) => {
 
   return (
     <NotificationContext.Provider
-      value={{ isVisible, notificationProps, showNotification, hideNotification }}
+      value={{
+        isVisible,
+        notificationProps,
+        showNotification,
+        hideNotification,
+      }}
     >
       {children}
     </NotificationContext.Provider>

@@ -318,7 +318,9 @@ export const addSupplementGroup = async (name: string): Promise<string> => {
     throw new Error("グループ名が空です");
   }
   if (Array.from(trimmedName).length > GROUP_NAME_MAX_LENGTH) {
-    throw new Error(`グループ名は${GROUP_NAME_MAX_LENGTH}文字以内で入力してください`);
+    throw new Error(
+      `グループ名は${GROUP_NAME_MAX_LENGTH}文字以内で入力してください`
+    );
   }
 
   const groupsRef = getSupplementGroupsCollection();
@@ -365,7 +367,9 @@ export const deleteSupplementGroup = async (groupId: string) => {
   const groupRef = getSupplementGroupsCollection().doc(groupId);
   const groupDoc = await groupRef.get();
   if (!groupDoc.exists || groupDoc.data()?.userId !== user.uid) {
-    throw new Error("指定されたグループが存在しないか、アクセス権限がありません");
+    throw new Error(
+      "指定されたグループが存在しないか、アクセス権限がありません"
+    );
   }
 
   const linkedSupplements = await getSupplementsCollection()

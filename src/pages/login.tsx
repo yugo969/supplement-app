@@ -37,8 +37,7 @@ const LoginPage: React.FC = () => {
         case "auth/invalid-credential":
           setError("password", {
             type: "server",
-            message:
-              "メールアドレスまたはパスワードが正しくありません",
+            message: "メールアドレスまたはパスワードが正しくありません",
           });
           break;
         case "auth/invalid-email":
@@ -58,7 +57,9 @@ const LoginPage: React.FC = () => {
           );
           break;
         default:
-          setAuthError("ログインに失敗しました。時間をおいて再度お試しください。");
+          setAuthError(
+            "ログインに失敗しました。時間をおいて再度お試しください。"
+          );
       }
     }
   };

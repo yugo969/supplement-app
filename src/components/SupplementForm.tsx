@@ -552,7 +552,8 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                   </div>
                   {isCreatingGroup && isGroupNameTooLong && (
                     <p className="text-xs text-red-600">
-                      グループ名は{GROUP_NAME_MAX_LENGTH}文字以内で入力してください
+                      グループ名は{GROUP_NAME_MAX_LENGTH}
+                      文字以内で入力してください
                     </p>
                   )}
 

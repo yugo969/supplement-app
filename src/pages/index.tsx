@@ -179,12 +179,9 @@ export default function Home() {
     []
   );
 
-  const isUngroupedSupplement = useCallback(
-    (supplement: SupplementData) => {
-      return (supplement.groupIds || []).length === 0;
-    },
-    []
-  );
+  const isUngroupedSupplement = useCallback((supplement: SupplementData) => {
+    return (supplement.groupIds || []).length === 0;
+  }, []);
 
   const hasUngroupedSupplements = useMemo(
     () => supplements.some(isUngroupedSupplement),
@@ -237,7 +234,9 @@ export default function Home() {
     (supplement.groupIds || []).includes(activeGroupId);
 
   const showEmptyGroupDeleteConfirmation = (targetGroupId: string) => {
-    const targetGroup = customGroups.find((group) => group.id === targetGroupId);
+    const targetGroup = customGroups.find(
+      (group) => group.id === targetGroupId
+    );
     if (!targetGroup) {
       setIsGroupEditMode(false);
       return;
@@ -273,7 +272,9 @@ export default function Home() {
                   ),
                 }))
               );
-              setActiveGroupId((prev) => (prev === targetGroupId ? null : prev));
+              setActiveGroupId((prev) =>
+                prev === targetGroupId ? null : prev
+              );
               setIsGroupEditMode(false);
               showNotification({ message: "グループを削除しました" });
             } catch (error) {
@@ -420,7 +421,9 @@ export default function Home() {
               ? Array.from(
                   new Set([...(supplement.groupIds || []), targetGroupId])
                 )
-              : (supplement.groupIds || []).filter((id) => id !== targetGroupId),
+              : (supplement.groupIds || []).filter(
+                  (id) => id !== targetGroupId
+                ),
           };
         })
       );
@@ -478,10 +481,7 @@ export default function Home() {
       }`}
     >
       <main className="relative">
-        <FloatingAddButton
-          onClick={handleOpenModal}
-          hidden={isGroupEditMode}
-        />
+        <FloatingAddButton onClick={handleOpenModal} hidden={isGroupEditMode} />
 
         <div className="relative flex flex-col w-screen h-full md:p-10 p-4">
           <HeaderSection
@@ -596,10 +596,7 @@ export default function Home() {
                 onClick={handleToggleGroupEditMode}
                 aria-label="リスト編集"
               >
-                <MdOutlineBookmarkBorder
-                  size={20}
-                  aria-hidden="true"
-                />
+                <MdOutlineBookmarkBorder size={20} aria-hidden="true" />
                 <span>リスト編集</span>
               </button>
             </div>
