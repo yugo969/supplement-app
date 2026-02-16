@@ -100,12 +100,16 @@ jobs:
           npx --yes netlify@23.15.1 build \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --context deploy-preview
+          [ -d .netlify/static ] || { echo "::error::.netlify/static not found after netlify build"; exit 1; }
+          [ -d .netlify/functions-internal ] || { echo "::error::.netlify/functions-internal not found after netlify build"; exit 1; }
           DEPLOY_STDOUT="$(mktemp)"
           DEPLOY_STDERR="$(mktemp)"
           set +e
           npx --yes netlify@23.15.1 deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
+            --dir ".netlify/static" \
+            --functions ".netlify/functions-internal" \
             --no-build \
             --json >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
           status=$?
@@ -128,6 +132,8 @@ jobs:
           npx --yes netlify@23.15.1 build \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --context production
+          [ -d .netlify/static ] || { echo "::error::.netlify/static not found after netlify build"; exit 1; }
+          [ -d .netlify/functions-internal ] || { echo "::error::.netlify/functions-internal not found after netlify build"; exit 1; }
           DEPLOY_STDOUT="$(mktemp)"
           DEPLOY_STDERR="$(mktemp)"
           set +e
@@ -135,6 +141,8 @@ jobs:
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
             --prod \
+            --dir ".netlify/static" \
+            --functions ".netlify/functions-internal" \
             --no-build \
             --json >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
           status=$?
