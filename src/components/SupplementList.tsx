@@ -8,6 +8,14 @@ interface SupplementListProps {
   onTakeDose: (supplementId: string, timing: string) => Promise<void>;
   onIncreaseCount: (supplementId: string) => void;
   onDecreaseCount: (supplementId: string) => void;
+  resolveGroupBadges: (supplement: SupplementData) => {
+    id: string;
+    name: string;
+  }[];
+  onGroupBadgeClick: (groupId: string) => void;
+  isGroupEditMode: boolean;
+  isAssignedToTargetGroup: (supplement: SupplementData) => boolean;
+  onToggleGroupMembership: (supplementId: string) => void;
   showFeedback: boolean;
   animatingIds: string[];
 }
@@ -19,6 +27,11 @@ const SupplementList: React.FC<SupplementListProps> = ({
   onTakeDose,
   onIncreaseCount,
   onDecreaseCount,
+  resolveGroupBadges,
+  onGroupBadgeClick,
+  isGroupEditMode,
+  isAssignedToTargetGroup,
+  onToggleGroupMembership,
   showFeedback,
   animatingIds,
 }) => {
@@ -36,6 +49,11 @@ const SupplementList: React.FC<SupplementListProps> = ({
           onTakeDose={onTakeDose}
           onIncreaseCount={onIncreaseCount}
           onDecreaseCount={onDecreaseCount}
+          groupBadges={resolveGroupBadges(supplement)}
+          onGroupBadgeClick={onGroupBadgeClick}
+          isGroupEditMode={isGroupEditMode}
+          isAssignedToTargetGroup={isAssignedToTargetGroup(supplement)}
+          onToggleGroupMembership={onToggleGroupMembership}
           showFeedback={showFeedback}
           animatingIds={animatingIds}
         />

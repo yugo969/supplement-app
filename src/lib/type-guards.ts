@@ -22,6 +22,22 @@ export function isSupplementData(data: unknown): data is SupplementData {
  * Firestoreから取得したデータに必要なプロパティがない場合でも適切にデフォルト値を設定
  */
 export function convertToSupplementData(apiData: any): SupplementData {
+  const systemGroupIds = new Set([
+    "system-morning",
+    "system-noon",
+    "system-night",
+  ]);
+  const normalizedImageUrl =
+    typeof apiData.imageUrl === "string" && apiData.imageUrl.startsWith("blob:")
+      ? ""
+      : (apiData.imageUrl ?? "");
+  const normalizedGroupIds = Array.isArray(apiData.groupIds)
+    ? apiData.groupIds.filter(
+        (id: unknown): id is string =>
+          typeof id === "string" && !systemGroupIds.has(id)
+      )
+    : [];
+
   // 必須フィールドがない場合はデフォルト値を設定
   const result: SupplementData = {
     id: apiData.id || "",
@@ -38,7 +54,9 @@ export function convertToSupplementData(apiData: any): SupplementData {
     timing_after_meal: apiData.timing_after_meal || false,
     timing_empty_stomach: apiData.timing_empty_stomach || false,
     timing_bedtime: apiData.timing_bedtime || false,
-    imageUrl: apiData.imageUrl || "",
+    timing_as_needed: apiData.timing_as_needed || false,
+    imageUrl: normalizedImageUrl,
+    groupIds: normalizedGroupIds,
     dosage_left: apiData.dosage_left,
     lastTakenDate: apiData.lastTakenDate,
     shouldResetTimings: apiData.shouldResetTimings || false,

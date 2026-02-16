@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 
 type NotificationProps = {
   message: string;
@@ -13,9 +20,9 @@ type NotificationProps = {
 
 type NotificationContextType = {
   isVisible: boolean;
-  setIsVisible?: boolean;
   notificationProps: NotificationProps | null;
   showNotification: (props: NotificationProps) => void;
+  hideNotification: () => void;
 };
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -40,6 +47,26 @@ export const NotificationProvider: React.FC<Props> = ({ children }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [notificationProps, setNotificationProps] =
     useState<NotificationProps | null>(null);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onDismissRef = useRef<(() => void) | undefined>(undefined);
+
+  const clearHideTimer = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  }, []);
+
+  const hideNotification = useCallback(() => {
+    clearHideTimer();
+    const onDismiss = onDismissRef.current;
+    onDismissRef.current = undefined;
+    if (onDismiss) {
+      onDismiss();
+    }
+    setIsVisible(false);
+    setNotificationProps(null);
+  }, [clearHideTimer]);
 
   const showNotification = useCallback(
     ({
@@ -49,25 +76,40 @@ export const NotificationProvider: React.FC<Props> = ({ children }) => {
       onDismiss,
       actions,
     }: NotificationProps) => {
-      setNotificationProps({ message, duration, autoHide, actions });
+      clearHideTimer();
+      onDismissRef.current = onDismiss;
+      setNotificationProps({
+        message,
+        duration,
+        autoHide,
+        actions,
+      });
       setIsVisible(true);
 
       if (autoHide) {
-        setTimeout(() => {
-          setIsVisible(false);
-          setNotificationProps(null);
-          if (onDismiss) {
-            onDismiss();
-          }
+        hideTimerRef.current = setTimeout(() => {
+          hideNotification();
         }, duration);
       }
     },
-    []
+    [clearHideTimer, hideNotification]
   );
+
+  useEffect(() => {
+    return () => {
+      clearHideTimer();
+      onDismissRef.current = undefined;
+    };
+  }, [clearHideTimer]);
 
   return (
     <NotificationContext.Provider
-      value={{ isVisible, notificationProps, showNotification }}
+      value={{
+        isVisible,
+        notificationProps,
+        showNotification,
+        hideNotification,
+      }}
     >
       {children}
     </NotificationContext.Provider>

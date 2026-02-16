@@ -31,62 +31,70 @@ export const useNotificationHandling = ({
   const [feedbackTimingId, setFeedbackTimingId] = useState<string | null>(null);
   const [animatingIds, setAnimatingIds] = useState<string[]>([]);
 
-  const handleUpdateSupplementTiming = async (
-    supplementId: string,
-    timing: string,
-    isTaking: boolean
-  ) => {
-    // 食事関連のタイミングは服用記録として処理しない
-    if (
-      ["before_meal", "after_meal", "empty_stomach", "bedtime"].includes(timing)
-    ) {
-      console.log("食事関連のタイミングは服用記録として処理しません:", timing);
-      return;
-    }
+  const handleUpdateSupplementTiming = useCallback(
+    async (supplementId: string, timing: string, isTaking: boolean) => {
+      // 食事関連のタイミングは服用記録として処理しない
+      if (
+        ["before_meal", "after_meal", "empty_stomach", "bedtime"].includes(
+          timing
+        )
+      ) {
+        console.log(
+          "食事関連のタイミングは服用記録として処理しません:",
+          timing
+        );
+        return;
+      }
 
-    const supplement = supplements.find((s) => s.id === supplementId);
-    if (!supplement) return;
+      const supplement = supplements.find((s) => s.id === supplementId);
+      if (!supplement) return;
 
-    const currentTakenTimings = {
-      ...(supplement.takenTimings || {
-        morning: false,
-        noon: false,
-        night: false,
-        before_meal: false,
-        after_meal: false,
-        empty_stomach: false,
-        bedtime: false,
-      }),
-    };
+      const currentTakenTimings = {
+        ...(supplement.takenTimings || {
+          morning: false,
+          noon: false,
+          night: false,
+          before_meal: false,
+          after_meal: false,
+          empty_stomach: false,
+          bedtime: false,
+        }),
+      };
 
-    const timingKey = timing as keyof typeof currentTakenTimings;
+      const timingKey = timing as keyof typeof currentTakenTimings;
 
-    currentTakenTimings[timingKey] = isTaking;
+      currentTakenTimings[timingKey] = isTaking;
 
-    let newDosage = supplement.dosage_left ?? supplement.dosage;
-    if (isTaking) {
-      newDosage -= supplement.intake_amount;
-    } else {
-      newDosage += supplement.intake_amount;
-    }
+      let newDosage = supplement.dosage_left ?? supplement.dosage;
+      if (isTaking) {
+        newDosage -= supplement.intake_amount;
+      } else {
+        newDosage += supplement.intake_amount;
+      }
 
-    if (newDosage < 0) newDosage = 0;
+      if (newDosage < 0) newDosage = 0;
 
-    await updateSupplementDosage(supplementId, newDosage, currentTakenTimings);
+      await updateSupplementDosage(
+        supplementId,
+        newDosage,
+        currentTakenTimings
+      );
 
-    setSupplements((prevSupplements) =>
-      prevSupplements.map((s) =>
-        s.id === supplementId
-          ? {
-              ...s,
-              dosage: newDosage,
-              dosage_left: newDosage,
-              takenTimings: currentTakenTimings,
-            }
-          : s
-      )
-    );
-  };
+      setSupplements((prevSupplements) =>
+        prevSupplements.map((s) =>
+          s.id === supplementId
+            ? {
+                ...s,
+                dosage: newDosage,
+                dosage_left: newDosage,
+                takenTimings: currentTakenTimings,
+              }
+            : s
+        )
+      );
+    },
+    [supplements, setSupplements]
+  );
 
   const handleTakeDose = useCallback(
     async (supplementId: string, timing: string) => {

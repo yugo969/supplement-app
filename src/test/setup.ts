@@ -53,3 +53,14 @@ vi.mock("framer-motion", () => ({
   },
   AnimatePresence: vi.fn(),
 }));
+
+if (typeof global.ResizeObserver === "undefined") {
+  class ResizeObserverMock {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+  // Radix UI の Slider/Dialog で参照されるため、jsdom環境で定義する
+  (global as typeof globalThis).ResizeObserver =
+    ResizeObserverMock as unknown as typeof ResizeObserver;
+}

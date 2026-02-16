@@ -9,16 +9,30 @@ import {
 interface UseDataManagementProps {
   user: any;
   setSupplements: React.Dispatch<React.SetStateAction<SupplementData[]>>;
+  setIsSupplementsLoading?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export const useDataManagement = ({
   user,
   setSupplements,
+  setIsSupplementsLoading,
 }: UseDataManagementProps) => {
   // 初回ロード時のデータ取得とリセット処理
   useEffect(() => {
-    if (user) {
-      getSupplements().then((data) => {
+    let isMounted = true;
+
+    if (!user) {
+      setSupplements([]);
+      setIsSupplementsLoading?.(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setIsSupplementsLoading?.(true);
+
+    getSupplements()
+      .then((data) => {
         // サプリメントデータに日付変更フラグがあれば処理する
         const updatedData = data.map(async (supplement) => {
           if (supplement.shouldResetTimings) {
@@ -44,12 +58,21 @@ export const useDataManagement = ({
           return supplement;
         });
 
-        Promise.all(updatedData).then((result) => {
-          setSupplements(result);
-        });
+        return Promise.all(updatedData);
+      })
+      .then((result) => {
+        if (!isMounted) return;
+        setSupplements(result);
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setIsSupplementsLoading?.(false);
       });
-    }
-  }, [user, setSupplements]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, setSupplements, setIsSupplementsLoading]);
 
   // 定期的に日付をチェックして変更があればリロード
   useEffect(() => {

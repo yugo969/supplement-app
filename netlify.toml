@@ -1,7 +1,5 @@
 [build]
-  # 基本的なビルド設定
-  publish = ".next"
+  # GitHub Actions / Netlify CLI で実行するビルド設定
   command = "npm run build"
 
-# GitHub Actionsでデプロイするため、複雑なビルドコマンドは不要
-# サブモジュール関連の問題もGitHub Actions側で解決
+# publish ディレクトリは Next.js Runtime / Netlify CLI 側の解決に委譲する

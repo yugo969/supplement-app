@@ -3,7 +3,8 @@ import {
   convertToSupplementData,
   convertToSupplementDataArray,
 } from "./type-guards";
-import { SupplementData } from "@/schemas/supplement";
+import { SupplementData, SupplementGroup } from "@/schemas/supplement";
+import { GROUP_NAME_MAX_LENGTH } from "@/constants/groups";
 
 const firestore = firebase.firestore();
 
@@ -16,6 +17,14 @@ const getSupplementsCollection = () => {
   // セキュリティルールでは /supplements/{supplementId} パスで
   // ドキュメントのuserIdフィールドと認証ユーザーIDを比較している
   return firestore.collection("supplements");
+};
+
+const getSupplementGroupsCollection = () => {
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    throw new Error("ユーザーがログインしていません");
+  }
+  return firestore.collection("supplementGroups");
 };
 
 // 現在の日付を取得（日本時間）
@@ -270,4 +279,118 @@ export const uploadImage = async (file: File): Promise<string> => {
     console.error("画像アップロードエラー:", error);
     throw error;
   }
+};
+
+export const getSupplementGroups = async (): Promise<SupplementGroup[]> => {
+  try {
+    const user = firebase.auth().currentUser;
+    if (!user) return [];
+
+    const groupsRef = getSupplementGroupsCollection().where(
+      "userId",
+      "==",
+      user.uid
+    );
+    const snapshot = await groupsRef.get();
+
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: typeof data.name === "string" ? data.name : "",
+        isSystem: false,
+      };
+    });
+  } catch (error) {
+    console.error("グループ取得エラー:", error);
+    return [];
+  }
+};
+
+export const addSupplementGroup = async (name: string): Promise<string> => {
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    throw new Error("ユーザーがログインしていません");
+  }
+
+  const trimmedName = name.trim();
+  if (!trimmedName) {
+    throw new Error("グループ名が空です");
+  }
+  if (Array.from(trimmedName).length > GROUP_NAME_MAX_LENGTH) {
+    throw new Error(
+      `グループ名は${GROUP_NAME_MAX_LENGTH}文字以内で入力してください`
+    );
+  }
+
+  const groupsRef = getSupplementGroupsCollection();
+  const docRef = await groupsRef.add({
+    name: trimmedName,
+    userId: user.uid,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return docRef.id;
+};
+
+export const toggleSupplementGroupMembership = async (
+  supplementId: string,
+  groupId: string,
+  shouldAssign: boolean
+) => {
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    throw new Error("ユーザーがログインしていません");
+  }
+
+  const supplementRef = getSupplementsCollection().doc(supplementId);
+  const doc = await supplementRef.get();
+  if (!doc.exists || doc.data()?.userId !== user.uid) {
+    throw new Error(
+      "指定されたサプリメントが存在しないか、アクセス権限がありません"
+    );
+  }
+
+  const groupRef = getSupplementGroupsCollection().doc(groupId);
+  const groupDoc = await groupRef.get();
+  if (!groupDoc.exists || groupDoc.data()?.userId !== user.uid) {
+    throw new Error(
+      "指定されたグループが存在しないか、アクセス権限がありません"
+    );
+  }
+
+  await supplementRef.update({
+    groupIds: shouldAssign
+      ? firebase.firestore.FieldValue.arrayUnion(groupId)
+      : firebase.firestore.FieldValue.arrayRemove(groupId),
+  });
+};
+
+export const deleteSupplementGroup = async (groupId: string) => {
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    throw new Error("ユーザーがログインしていません");
+  }
+
+  const groupRef = getSupplementGroupsCollection().doc(groupId);
+  const groupDoc = await groupRef.get();
+  if (!groupDoc.exists || groupDoc.data()?.userId !== user.uid) {
+    throw new Error(
+      "指定されたグループが存在しないか、アクセス権限がありません"
+    );
+  }
+
+  const linkedSupplements = await getSupplementsCollection()
+    .where("userId", "==", user.uid)
+    .where("groupIds", "array-contains", groupId)
+    .get();
+
+  const batch = firestore.batch();
+  linkedSupplements.docs.forEach((supplementDoc) => {
+    batch.update(supplementDoc.ref, {
+      groupIds: firebase.firestore.FieldValue.arrayRemove(groupId),
+    });
+  });
+  batch.delete(groupRef);
+  await batch.commit();
 };

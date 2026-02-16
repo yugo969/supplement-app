@@ -13,10 +13,10 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
     return (
       <button
         className={cn(
-          "relative overflow-hidden rounded-full border-2 border-gray-500 px-4 py-2 h-10 text-sm font-medium min-w-[48px]",
+          "relative overflow-hidden rounded-full border border-gray-300 px-4 py-2 h-10 text-sm font-medium min-w-[48px]",
           "transition-all duration-200 ease-in-out",
-          "shadow-sm hover:shadow focus:shadow-md",
-          "outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1",
+          "shadow-md hover:shadow-lg focus:shadow-xl",
+          "outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1",
           "hover:scale-105 active:scale-95",
           disabled &&
             "opacity-70 cursor-not-allowed hover:scale-100 active:scale-100",

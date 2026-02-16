@@ -2,7 +2,7 @@
 
 サプリメント服用管理アプリケーション - 個人開発による品質重視のWebアプリ
 
-![Next.js](https://img.shields.io/badge/Next.js-15.3.3-black)
+![Next.js](https://img.shields.io/badge/Next.js-15.5.9-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6.2-blue)
 ![Firebase](https://img.shields.io/badge/Firebase-11.8.1-orange)
 ![Playwright](https://img.shields.io/badge/E2E-Playwright-green)
@@ -26,7 +26,7 @@ Firebase認証とFirestoreを活用し、安全で高速なデータ管理を実
 
 ### フロントエンド
 
-- **Framework**: Next.js 15.3.3 (App Router)
+- **Framework**: Next.js 15.5.9 (App Router)
 - **Language**: TypeScript 5.6.2
 - **UI**: Tailwind CSS 3.3.3 + Radix UI
 - **Animation**: Framer Motion 12.9.2
@@ -234,7 +234,7 @@ supplement-app/
 
 ### プロダクション移行時
 
-GitHub Actions対応済み（`docs/e2e-cicd-template.md`参照）:
+GitHub Actions対応済み（`.cursor/docs/e2e-cicd-template.md`参照）:
 
 - **PR用**: 重要テストのみ（5分実行）
 - **Main用**: 全99テスト包括実行（20分）
@@ -242,9 +242,10 @@ GitHub Actions対応済み（`docs/e2e-cicd-template.md`参照）:
 
 ## 📚 ドキュメント
 
-- `docs/project-overview.yaml` - プロジェクト全体概要
-- `docs/e2e-test-integration-checklist.md` - E2Eテスト導入手順
-- `docs/e2e-cicd-template.md` - CI/CD移行テンプレート
+- `.cursor/docs/project-overview.yaml` - プロジェクト全体概要
+- `.cursor/docs/uiux-improvement-log.md` - UI/UX改善の計画・実装ログ
+- `.cursor/docs/e2e-test-integration-checklist.md` - E2Eテスト導入手順
+- `.cursor/docs/e2e-cicd-template.md` - CI/CD移行テンプレート
 
 ## 🤝 開発ガイドライン
 
