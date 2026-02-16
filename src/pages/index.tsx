@@ -31,6 +31,7 @@ import {
 } from "@/lib/firestore";
 import { useNotification } from "@/lib/useNotification";
 import { GROUP_NAME_MAX_LENGTH } from "@/constants/groups";
+import { toggleGroupMembershipInList } from "@/lib/group-membership";
 
 const SYSTEM_GROUPS: SupplementGroup[] = [
   { id: "system-morning", name: "朝", isSystem: true },
@@ -521,26 +522,11 @@ export default function Home() {
       return;
     }
 
-    const targetSupplement = supplements.find(
-      (supplement) => supplement.id === supplementId
-    );
-    if (!targetSupplement) return;
-
-    const currentlyAssigned = (targetSupplement.groupIds || []).includes(
-      activeGroupId
-    );
-    const nextAssigned = !currentlyAssigned;
     const targetGroupId = activeGroupId;
 
-    const nextSupplements = supplements.map((supplement) => {
-      if (supplement.id !== supplementId) return supplement;
-      const nextGroupIds = nextAssigned
-        ? Array.from(new Set([...(supplement.groupIds || []), targetGroupId]))
-        : (supplement.groupIds || []).filter((id) => id !== targetGroupId);
-      return { ...supplement, groupIds: nextGroupIds };
-    });
-
-    setSupplements(nextSupplements);
+    setSupplements((prevSupplements) =>
+      toggleGroupMembershipInList(prevSupplements, supplementId, targetGroupId)
+    );
   };
 
   const handleAddGroupFromForm = async (rawName: string): Promise<boolean> => {
