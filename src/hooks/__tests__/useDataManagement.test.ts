@@ -8,15 +8,12 @@ vi.mock("@/lib/firestore", () => ({
   getCurrentDate: vi.fn(() => "2026/02/16"),
 }));
 
-import {
-  getSupplements,
-  resetTimingsIfDateChanged,
-} from "@/lib/firestore";
+import { getSupplements, resetTimingsIfDateChanged } from "@/lib/firestore";
 
 const mockedGetSupplements = vi.mocked(getSupplements);
 const mockedResetTimingsIfDateChanged = vi.mocked(resetTimingsIfDateChanged);
 
-const createDeferred = <T,>() => {
+const createDeferred = <T>() => {
   let resolve!: (value: T | PromiseLike<T>) => void;
   let reject!: (reason?: unknown) => void;
   const promise = new Promise<T>((res, rej) => {

@@ -45,8 +45,12 @@ describe("ImageCropDialog", () => {
     expect(screen.getByTestId("crop-value")).toHaveTextContent("10,20");
     expect(screen.getByTestId("zoom-value")).toHaveTextContent("2.5");
 
-    rerender(<ImageCropDialog isOpen={false} imageSrc="image-a.jpg" {...props} />);
-    rerender(<ImageCropDialog isOpen={true} imageSrc="image-b.jpg" {...props} />);
+    rerender(
+      <ImageCropDialog isOpen={false} imageSrc="image-a.jpg" {...props} />
+    );
+    rerender(
+      <ImageCropDialog isOpen={true} imageSrc="image-b.jpg" {...props} />
+    );
 
     expect(screen.getByTestId("crop-value")).toHaveTextContent("0,0");
     expect(screen.getByTestId("zoom-value")).toHaveTextContent("1");
