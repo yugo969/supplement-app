@@ -311,7 +311,10 @@ export default function Home() {
     setSupplements((prev) =>
       prev.map((supplement) => ({
         ...supplement,
-        groupIds: [...(groupEditSnapshot[supplement.id] || [])],
+        groupIds:
+          groupEditSnapshot[supplement.id] !== undefined
+            ? [...groupEditSnapshot[supplement.id]]
+            : [...(supplement.groupIds || [])],
       }))
     );
   };
@@ -445,6 +448,7 @@ export default function Home() {
   };
 
   const handleSelectGroupChip = (groupId: string) => {
+    // TODO(ui-list-edit): 編集モード中はリスト切替を禁止する方針（未実装）
     setActiveGroupId((prev) => (prev === groupId ? null : groupId));
   };
 
