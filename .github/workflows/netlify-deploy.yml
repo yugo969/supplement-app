@@ -97,21 +97,14 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           set -euo pipefail
-          npx --yes netlify@23.15.1 build \
-            --auth "$NETLIFY_AUTH_TOKEN" \
-            --context deploy-preview
-          [ -d .netlify/static ] || { echo "::error::.netlify/static not found after netlify build"; exit 1; }
-          [ -d .netlify/functions-internal ] || { echo "::error::.netlify/functions-internal not found after netlify build"; exit 1; }
           DEPLOY_STDOUT="$(mktemp)"
           DEPLOY_STDERR="$(mktemp)"
           set +e
           npx --yes netlify@23.15.1 deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
-            --dir ".netlify/static" \
-            --functions ".netlify/functions-internal" \
-            --no-build \
-            --json >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
+            --build \
+            --context deploy-preview >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
           status=$?
           set -e
           if [ "$status" -ne 0 ]; then
@@ -123,17 +116,12 @@ jobs:
             exit "$status"
           fi
           cat "$DEPLOY_STDOUT"
-          cp "$DEPLOY_STDOUT" netlify-deploy.json
+          cp "$DEPLOY_STDOUT" netlify-deploy.log
 
       - name: Deploy Production to Netlify (main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           set -euo pipefail
-          npx --yes netlify@23.15.1 build \
-            --auth "$NETLIFY_AUTH_TOKEN" \
-            --context production
-          [ -d .netlify/static ] || { echo "::error::.netlify/static not found after netlify build"; exit 1; }
-          [ -d .netlify/functions-internal ] || { echo "::error::.netlify/functions-internal not found after netlify build"; exit 1; }
           DEPLOY_STDOUT="$(mktemp)"
           DEPLOY_STDERR="$(mktemp)"
           set +e
@@ -141,10 +129,8 @@ jobs:
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
             --prod \
-            --dir ".netlify/static" \
-            --functions ".netlify/functions-internal" \
-            --no-build \
-            --json >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
+            --build \
+            --context production >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
           status=$?
           set -e
           if [ "$status" -ne 0 ]; then
@@ -156,7 +142,7 @@ jobs:
             exit "$status"
           fi
           cat "$DEPLOY_STDOUT"
-          cp "$DEPLOY_STDOUT" netlify-deploy.json
+          cp "$DEPLOY_STDOUT" netlify-deploy.log
 
       # デプロイ結果のサマリー
       - name: Deployment summary
@@ -168,14 +154,7 @@ jobs:
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment**: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'Production' || 'Preview' }}" >> $GITHUB_STEP_SUMMARY
-          if [ -s netlify-deploy.json ]; then
-            deploy_url=$(node -e "const fs=require('fs');try{const d=JSON.parse(fs.readFileSync('netlify-deploy.json','utf8'));console.log(d.deploy_url||'')}catch(e){console.log('')}")
-            logs_url=$(node -e "const fs=require('fs');try{const d=JSON.parse(fs.readFileSync('netlify-deploy.json','utf8'));console.log(d.logs||'')}catch(e){console.log('')}")
-            [ -n "$deploy_url" ] && echo "- **Deploy URL**: $deploy_url" >> $GITHUB_STEP_SUMMARY
-            [ -n "$logs_url" ] && echo "- **Logs URL**: $logs_url" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- **Deploy URL**: (not available)" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "- **Deploy URL**: workflow logs を参照" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ✅ Quality Assurance" >> $GITHUB_STEP_SUMMARY
           echo "- **Submodule Handling**: .cursor development config excluded from production" >> $GITHUB_STEP_SUMMARY
