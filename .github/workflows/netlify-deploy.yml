@@ -77,6 +77,18 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
 
+      - name: Netlify CLI preflight
+        run: |
+          set -euo pipefail
+          npx --yes netlify@23.15.1 --version
+          npx --yes netlify@23.15.1 api getSite \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --data "{\"site_id\":\"$NETLIFY_SITE_ID\"}" >/dev/null
+          echo "Netlify preflight passed."
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
       - name: Deploy Preview to Netlify (PR)
         if: github.event_name == 'pull_request'
         run: |
@@ -84,7 +96,7 @@ jobs:
           DEPLOY_STDOUT="$(mktemp)"
           DEPLOY_STDERR="$(mktemp)"
           set +e
-          npx netlify deploy \
+          npx --yes netlify@23.15.1 deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
             --context deploy-preview \
@@ -114,7 +126,7 @@ jobs:
           DEPLOY_STDOUT="$(mktemp)"
           DEPLOY_STDERR="$(mktemp)"
           set +e
-          npx netlify deploy \
+          npx --yes netlify@23.15.1 deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
             --context production \
