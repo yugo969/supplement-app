@@ -119,7 +119,6 @@ jobs:
           npx --yes netlify@23.15.1 deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
-            --context deploy-preview \
             --alias "pr-${{ github.event.pull_request.number }}" \
             --message "PR #${{ github.event.pull_request.number }} / ${{ github.sha }}" \
             --no-build \
@@ -147,7 +146,6 @@ jobs:
           npx --yes netlify@23.15.1 deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
-            --context production \
             --prod \
             --message "main / ${{ github.sha }}" \
             --no-build \
