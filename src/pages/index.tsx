@@ -155,15 +155,28 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
+  const syncSupplementsAndGroups = useCallback(async () => {
+    const [latestSupplements, latestGroups] = await Promise.all([
+      getSupplements(),
+      getSupplementGroups(),
+    ]);
+    setSupplements(latestSupplements);
+    setCustomGroups(latestGroups);
+  }, []);
+
   useEffect(() => {
     if (!user) {
       setCustomGroups([]);
       return;
     }
 
-    getSupplementGroups().then((groups) => {
-      setCustomGroups(groups);
-    });
+    getSupplementGroups()
+      .then((groups) => {
+        setCustomGroups(groups);
+      })
+      .catch(() => {
+        setCustomGroups([]);
+      });
   }, [user]);
 
   const groupMap = useMemo(() => {
@@ -269,17 +282,7 @@ export default function Home() {
           callback: async () => {
             try {
               await deleteSupplementGroup(targetGroupId);
-              setCustomGroups((prev) =>
-                prev.filter((group) => group.id !== targetGroupId)
-              );
-              setSupplements((prev) =>
-                prev.map((supplement) => ({
-                  ...supplement,
-                  groupIds: (supplement.groupIds || []).filter(
-                    (groupId) => groupId !== targetGroupId
-                  ),
-                }))
-              );
+              await syncSupplementsAndGroups();
               setActiveGroupId((prev) =>
                 prev === targetGroupId ? null : prev
               );
@@ -418,8 +421,7 @@ export default function Home() {
 
         if (rollbackFailed) {
           try {
-            const latestSupplements = await getSupplements();
-            setSupplements(latestSupplements);
+            await syncSupplementsAndGroups();
             showNotification({
               message:
                 "グループ更新の一部反映に失敗しました。最新状態に再同期しました",
@@ -441,6 +443,14 @@ export default function Home() {
         setGroupEditSnapshot({});
         return;
       }
+    }
+
+    try {
+      await syncSupplementsAndGroups();
+    } catch (syncError) {
+      showNotification({
+        message: "グループ更新後の再同期に失敗しました",
+      });
     }
 
     setIsGroupEditMode(false);

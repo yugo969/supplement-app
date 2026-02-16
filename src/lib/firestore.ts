@@ -351,6 +351,14 @@ export const toggleSupplementGroupMembership = async (
     );
   }
 
+  const groupRef = getSupplementGroupsCollection().doc(groupId);
+  const groupDoc = await groupRef.get();
+  if (!groupDoc.exists || groupDoc.data()?.userId !== user.uid) {
+    throw new Error(
+      "指定されたグループが存在しないか、アクセス権限がありません"
+    );
+  }
+
   await supplementRef.update({
     groupIds: shouldAssign
       ? firebase.firestore.FieldValue.arrayUnion(groupId)
