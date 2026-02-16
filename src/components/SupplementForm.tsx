@@ -243,12 +243,6 @@ const TIMING_ICONS = {
 };
 
 // タイミングラベル設定
-const TIMING_LABELS = {
-  morning: "朝",
-  noon: "昼",
-  night: "夜",
-};
-
 interface SupplementFormProps {
   isOpen: boolean;
   onClose: () => void;
