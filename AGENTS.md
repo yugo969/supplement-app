@@ -79,6 +79,6 @@ UI/UX・機能・運用に関わる変更を行ったら、同ターンで必ず
 ## 9. Gemini PR前レビュー（必須）
 
 - コード変更があるターンでは、最終回答前に Gemini CLI で差分レビューを必ず実行する。
-- レビュー手順は `gemini-pr-review` Skill を使用する（`$CODEX_HOME/skills/gemini-pr-review/SKILL.md` を参照）。
+- レビュー手順は `gemini-pr-review` Skill を使用する。
 - 最低限 `git diff --no-color` を Gemini に渡し、High/Medium/Low の指摘を確認する。
 - High 指摘がある場合は、修正してから最終回答するか、未対応理由を明記して報告する。
