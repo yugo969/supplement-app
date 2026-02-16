@@ -1,4 +1,4 @@
-name: Deploy to Netlify (Production)
+name: Deploy to Netlify
 
 on:
   push:
@@ -66,10 +66,10 @@ jobs:
         run: npm ci
 
       # TypeScript型チェック
-      - name: Type check
+      - name: Build (Next.js)
         run: npm run build
         env:
-          # Firebase環境設定（本番用）
+          # Firebase環境設定
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -77,33 +77,45 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
 
-      # ビルド成果物の確認
-      - name: Verify build output
+      - name: Deploy Preview to Netlify (PR)
+        if: github.event_name == 'pull_request'
         run: |
-          echo "📦 Build output structure:"
-          ls -la .next/
-          echo "📊 Build size summary:"
-          du -sh .next/
-
-      # Netlifyへデプロイ
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v3
-        with:
-          publish-dir: "./.next"
-          production-deploy: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: |
-            Deploy from GitHub Actions
-            Commit: ${{ github.sha }}
-            Branch: ${{ github.ref_name }}
-            Trigger: ${{ github.event_name }}
-          enable-pull-request-comment: true
-          enable-commit-comment: true
-          overwrites-pull-request-comment: true
+          npx netlify deploy \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --site "$NETLIFY_SITE_ID" \
+            --context deploy-preview \
+            --alias "pr-${{ github.event.pull_request.number }}" \
+            --message "PR #${{ github.event.pull_request.number }} / ${{ github.sha }}" \
+            --json | tee netlify-deploy.json
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        timeout-minutes: 10
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+
+      - name: Deploy Production to Netlify (main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          npx netlify deploy \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --site "$NETLIFY_SITE_ID" \
+            --context production \
+            --prod \
+            --message "main / ${{ github.sha }}" \
+            --json | tee netlify-deploy.json
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
 
       # デプロイ結果のサマリー
       - name: Deployment summary
@@ -115,9 +127,15 @@ jobs:
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment**: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'Production' || 'Preview' }}" >> $GITHUB_STEP_SUMMARY
+          if [ -f netlify-deploy.json ]; then
+            deploy_url=$(node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync('netlify-deploy.json','utf8'));console.log(d.deploy_url||'')"); 
+            logs_url=$(node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync('netlify-deploy.json','utf8'));console.log(d.logs||'')");
+            [ -n "$deploy_url" ] && echo "- **Deploy URL**: $deploy_url" >> $GITHUB_STEP_SUMMARY
+            [ -n "$logs_url" ] && echo "- **Logs URL**: $logs_url" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ✅ Quality Assurance" >> $GITHUB_STEP_SUMMARY
           echo "- **Submodule Handling**: .cursor development config excluded from production" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build Verification**: TypeScript compilation successful" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Verification**: Next.js build successful" >> $GITHUB_STEP_SUMMARY
           echo "- **Firebase Integration**: Environment variables configured" >> $GITHUB_STEP_SUMMARY
-          echo "- **Production Ready**: Clean deployment without development dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy Strategy**: PR=Deploy Preview / main=Production" >> $GITHUB_STEP_SUMMARY
