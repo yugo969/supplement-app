@@ -773,19 +773,24 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
+                            <input
+                              id="timing_morning_input"
+                              type="checkbox"
+                              checked={!!field.value}
+                              onChange={(event) =>
+                                field.onChange(event.target.checked)
+                              }
+                              className="sr-only"
+                              aria-label={`朝の服用を${field.value ? "選択解除" : "選択"}`}
+                            />
                             <label
+                              htmlFor="timing_morning_input"
                               className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
                                 field.value
                                   ? "bg-white"
                                   : "bg-white hover:bg-gray-50"
                               }`}
                             >
-                              <button
-                                type="button"
-                                onClick={() => field.onChange(!field.value)}
-                                className="sr-only"
-                                aria-label={`朝の服用を${field.value ? "選択解除" : "選択"}`}
-                              />
                               <span className="text-gray-700 flex items-center gap-1">
                                 {TIMING_ICONS.morning}
                               </span>
@@ -806,19 +811,24 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
+                            <input
+                              id="timing_noon_input"
+                              type="checkbox"
+                              checked={!!field.value}
+                              onChange={(event) =>
+                                field.onChange(event.target.checked)
+                              }
+                              className="sr-only"
+                              aria-label={`昼の服用を${field.value ? "選択解除" : "選択"}`}
+                            />
                             <label
+                              htmlFor="timing_noon_input"
                               className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
                                 field.value
                                   ? "bg-white"
                                   : "bg-white hover:bg-gray-50"
                               }`}
                             >
-                              <button
-                                type="button"
-                                onClick={() => field.onChange(!field.value)}
-                                className="sr-only"
-                                aria-label={`昼の服用を${field.value ? "選択解除" : "選択"}`}
-                              />
                               <span className="text-gray-700 flex items-center gap-1">
                                 {TIMING_ICONS.noon}
                               </span>
@@ -839,19 +849,24 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
+                            <input
+                              id="timing_night_input"
+                              type="checkbox"
+                              checked={!!field.value}
+                              onChange={(event) =>
+                                field.onChange(event.target.checked)
+                              }
+                              className="sr-only"
+                              aria-label={`夜の服用を${field.value ? "選択解除" : "選択"}`}
+                            />
                             <label
+                              htmlFor="timing_night_input"
                               className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
                                 field.value
                                   ? "bg-white"
                                   : "bg-white hover:bg-gray-50"
                               }`}
                             >
-                              <button
-                                type="button"
-                                onClick={() => field.onChange(!field.value)}
-                                className="sr-only"
-                                aria-label={`夜の服用を${field.value ? "選択解除" : "選択"}`}
-                              />
                               <span className="text-gray-700 flex items-center gap-1">
                                 {TIMING_ICONS.night}
                               </span>
