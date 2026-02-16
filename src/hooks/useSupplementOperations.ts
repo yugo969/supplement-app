@@ -79,7 +79,7 @@ export const useSupplementOperations = ({
   methods,
 }: UseSupplementOperationsProps) => {
   const { showNotification } = useNotification();
-  const { setValue, reset } = methods;
+  const { setValue, reset, resetField } = methods;
 
   const resetForm = () => {
     reset({
@@ -293,6 +293,7 @@ export const useSupplementOperations = ({
 
   const handleImageDelete = () => {
     setUploadedImage(null);
+    resetField("image");
   };
 
   const handleImageUpdate = (croppedImageUrl: string) => {

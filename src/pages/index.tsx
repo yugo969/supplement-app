@@ -25,10 +25,13 @@ import EmptyStateCard from "@/components/EmptyStateCard";
 import {
   addSupplementGroup,
   deleteSupplementGroup,
+  getSupplements,
   getSupplementGroups,
   toggleSupplementGroupMembership,
 } from "@/lib/firestore";
 import { useNotification } from "@/lib/useNotification";
+import { GROUP_NAME_MAX_LENGTH } from "@/constants/groups";
+import { toggleGroupMembershipInList } from "@/lib/group-membership";
 
 const SYSTEM_GROUPS: SupplementGroup[] = [
   { id: "system-morning", name: "朝", isSystem: true },
@@ -36,7 +39,6 @@ const SYSTEM_GROUPS: SupplementGroup[] = [
   { id: "system-night", name: "夜", isSystem: true },
 ];
 const UNGROUPED_GROUP_ID = "ungrouped";
-const GROUP_NAME_MAX_LENGTH = 12;
 
 export default function Home() {
   const methods = useForm<SupplementFormData>({
@@ -55,6 +57,7 @@ export default function Home() {
       timing_after_meal: false,
       timing_empty_stomach: false,
       timing_bedtime: false,
+      timing_as_needed: false,
       daily_target_count: 1,
       meal_timing: "none",
     },
@@ -62,7 +65,6 @@ export default function Home() {
   const { setValue } = methods;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [supplements, setSupplements] = useState<SupplementData[]>([]);
-  const [isSupplementsLoaded, setIsSupplementsLoaded] = useState(false);
   const [selectedSupplement, setSelectedSupplement] =
     useState<null | SupplementData>(null);
 
@@ -74,10 +76,14 @@ export default function Home() {
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [showInfoDetails, setShowInfoDetails] = useState(false);
+  const [isSupplementsLoading, setIsSupplementsLoading] = useState(true);
   const [customGroups, setCustomGroups] = useState<SupplementGroup[]>([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [isGroupEditMode, setIsGroupEditMode] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [groupEditSnapshot, setGroupEditSnapshot] = useState<
+    Record<string, string[]>
+  >({});
   const groupChipContainerRef = useRef<HTMLDivElement | null>(null);
   const groupChipButtonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [canScrollGroupLeft, setCanScrollGroupLeft] = useState(false);
@@ -87,7 +93,7 @@ export default function Home() {
   const { user, loading } = useAuth();
 
   // データ管理（日付変更監視とデータ取得・リセット）
-  useDataManagement({ user, setSupplements, setIsSupplementsLoaded });
+  useDataManagement({ user, setSupplements, setIsSupplementsLoading });
 
   // useNotificationHandlingカスタムフック
   const {
@@ -150,15 +156,28 @@ export default function Home() {
     setIsModalOpen(true);
   };
 
+  const syncSupplementsAndGroups = useCallback(async () => {
+    const [latestSupplements, latestGroups] = await Promise.all([
+      getSupplements(),
+      getSupplementGroups(),
+    ]);
+    setSupplements(latestSupplements);
+    setCustomGroups(latestGroups);
+  }, []);
+
   useEffect(() => {
     if (!user) {
       setCustomGroups([]);
       return;
     }
 
-    getSupplementGroups().then((groups) => {
-      setCustomGroups(groups);
-    });
+    getSupplementGroups()
+      .then((groups) => {
+        setCustomGroups(groups);
+      })
+      .catch(() => {
+        setCustomGroups([]);
+      });
   }, [user]);
 
   const groupMap = useMemo(() => {
@@ -180,12 +199,9 @@ export default function Home() {
     []
   );
 
-  const isUngroupedSupplement = useCallback(
-    (supplement: SupplementData) => {
-      return (supplement.groupIds || []).length === 0;
-    },
-    []
-  );
+  const isUngroupedSupplement = useCallback((supplement: SupplementData) => {
+    return (supplement.groupIds || []).length === 0;
+  }, []);
 
   const hasUngroupedSupplements = useMemo(
     () => supplements.some(isUngroupedSupplement),
@@ -238,7 +254,9 @@ export default function Home() {
     (supplement.groupIds || []).includes(activeGroupId);
 
   const showEmptyGroupDeleteConfirmation = (targetGroupId: string) => {
-    const targetGroup = customGroups.find((group) => group.id === targetGroupId);
+    const targetGroup = customGroups.find(
+      (group) => group.id === targetGroupId
+    );
     if (!targetGroup) {
       setIsGroupEditMode(false);
       return;
@@ -251,7 +269,9 @@ export default function Home() {
         {
           label: "キャンセル",
           callback: () => {
+            restoreGroupEditSnapshot();
             setIsGroupEditMode(false);
+            setGroupEditSnapshot({});
             showNotification({
               message: "グループを残しました",
               duration: 1000,
@@ -263,19 +283,12 @@ export default function Home() {
           callback: async () => {
             try {
               await deleteSupplementGroup(targetGroupId);
-              setCustomGroups((prev) =>
-                prev.filter((group) => group.id !== targetGroupId)
+              await syncSupplementsAndGroups();
+              setActiveGroupId((prev) =>
+                prev === targetGroupId ? null : prev
               );
-              setSupplements((prev) =>
-                prev.map((supplement) => ({
-                  ...supplement,
-                  groupIds: (supplement.groupIds || []).filter(
-                    (groupId) => groupId !== targetGroupId
-                  ),
-                }))
-              );
-              setActiveGroupId((prev) => (prev === targetGroupId ? null : prev));
               setIsGroupEditMode(false);
+              setGroupEditSnapshot({});
               showNotification({ message: "グループを削除しました" });
             } catch (error) {
               showNotification({ message: "グループ削除に失敗しました" });
@@ -286,42 +299,167 @@ export default function Home() {
     });
   };
 
-  const handleToggleGroupEditMode = () => {
-    if (!isGroupEditMode && customGroups.length === 0) {
+  const captureGroupEditSnapshot = () => {
+    const snapshot = supplements.reduce<Record<string, string[]>>(
+      (acc, supplement) => {
+        acc[supplement.id] = [...(supplement.groupIds || [])];
+        return acc;
+      },
+      {}
+    );
+    setGroupEditSnapshot(snapshot);
+  };
+
+  const restoreGroupEditSnapshot = () => {
+    if (Object.keys(groupEditSnapshot).length === 0) return;
+    setSupplements((prev) =>
+      prev.map((supplement) => ({
+        ...supplement,
+        groupIds:
+          groupEditSnapshot[supplement.id] !== undefined
+            ? [...groupEditSnapshot[supplement.id]]
+            : [...(supplement.groupIds || [])],
+      }))
+    );
+  };
+
+  const handleEnterGroupEditMode = () => {
+    if (customGroups.length === 0) {
       showNotification({ message: "先にグループを追加してください" });
       return;
     }
 
     if (
-      isGroupEditMode &&
-      activeGroupId &&
-      activeGroupId !== UNGROUPED_GROUP_ID &&
-      !activeGroupId.startsWith("system-")
+      !activeGroupId ||
+      activeGroupId === UNGROUPED_GROUP_ID ||
+      activeGroupId.startsWith("system-")
     ) {
-      const isGroupEmpty = !supplements.some((supplement) =>
-        (supplement.groupIds || []).includes(activeGroupId)
+      setActiveGroupId(customGroups[0]?.id ?? null);
+    }
+
+    captureGroupEditSnapshot();
+    setIsGroupEditMode(true);
+  };
+
+  const handleCancelGroupEdit = () => {
+    restoreGroupEditSnapshot();
+    setGroupEditSnapshot({});
+    setIsGroupEditMode(false);
+  };
+
+  const handleRegisterGroupEdit = async () => {
+    if (
+      !activeGroupId ||
+      activeGroupId === UNGROUPED_GROUP_ID ||
+      activeGroupId.startsWith("system-")
+    ) {
+      restoreGroupEditSnapshot();
+      setIsGroupEditMode(false);
+      setGroupEditSnapshot({});
+      return;
+    }
+
+    const targetGroupId = activeGroupId;
+    const isGroupEmpty = !supplements.some((supplement) =>
+      (supplement.groupIds || []).includes(targetGroupId)
+    );
+
+    if (isGroupEmpty) {
+      showEmptyGroupDeleteConfirmation(targetGroupId);
+      return;
+    }
+
+    const changes = supplements
+      .map((supplement) => {
+        const before = (groupEditSnapshot[supplement.id] || []).includes(
+          targetGroupId
+        );
+        const after = (supplement.groupIds || []).includes(targetGroupId);
+        if (before === after) return null;
+        return {
+          supplementId: supplement.id,
+          shouldAssign: after,
+        };
+      })
+      .filter(
+        (change): change is { supplementId: string; shouldAssign: boolean } =>
+          !!change
       );
-      if (isGroupEmpty) {
-        showEmptyGroupDeleteConfirmation(activeGroupId);
+
+    if (changes.length === 0) {
+      setIsGroupEditMode(false);
+      setGroupEditSnapshot({});
+      return;
+    }
+
+    const appliedChanges: Array<{
+      supplementId: string;
+      shouldAssign: boolean;
+    }> = [];
+
+    for (const change of changes) {
+      try {
+        await toggleSupplementGroupMembership(
+          change.supplementId,
+          targetGroupId,
+          change.shouldAssign
+        );
+        appliedChanges.push(change);
+      } catch (error) {
+        const rollbackResults = await Promise.allSettled(
+          appliedChanges.map((applied) =>
+            toggleSupplementGroupMembership(
+              applied.supplementId,
+              targetGroupId,
+              !applied.shouldAssign
+            )
+          )
+        );
+
+        const rollbackFailed = rollbackResults.some(
+          (result) => result.status === "rejected"
+        );
+
+        if (rollbackFailed) {
+          try {
+            await syncSupplementsAndGroups();
+            showNotification({
+              message:
+                "グループ更新の一部反映に失敗しました。最新状態に再同期しました",
+            });
+          } catch (syncError) {
+            showNotification({
+              message:
+                "グループ更新に失敗しました。画面を再読み込みして状態を確認してください",
+            });
+          }
+        } else {
+          restoreGroupEditSnapshot();
+          showNotification({
+            message: "グループ更新に失敗したため変更を元に戻しました",
+          });
+        }
+
+        setIsGroupEditMode(false);
+        setGroupEditSnapshot({});
         return;
       }
     }
 
-    setIsGroupEditMode((prev) => {
-      const next = !prev;
-      if (
-        next &&
-        (!activeGroupId ||
-          activeGroupId === UNGROUPED_GROUP_ID ||
-          activeGroupId.startsWith("system-"))
-      ) {
-        setActiveGroupId(customGroups[0]?.id ?? null);
-      }
-      return next;
-    });
+    try {
+      await syncSupplementsAndGroups();
+    } catch (syncError) {
+      showNotification({
+        message: "グループ更新後の再同期に失敗しました",
+      });
+    }
+
+    setIsGroupEditMode(false);
+    setGroupEditSnapshot({});
   };
 
   const handleSelectGroupChip = (groupId: string) => {
+    // TODO(ui-list-edit): 編集モード中はリスト切替を禁止する方針（未実装）
     setActiveGroupId((prev) => (prev === groupId ? null : groupId));
   };
 
@@ -384,51 +522,11 @@ export default function Home() {
       return;
     }
 
-    const targetSupplement = supplements.find(
-      (supplement) => supplement.id === supplementId
-    );
-    if (!targetSupplement) return;
-
-    const currentlyAssigned = (targetSupplement.groupIds || []).includes(
-      activeGroupId
-    );
-    const nextAssigned = !currentlyAssigned;
     const targetGroupId = activeGroupId;
 
-    const nextSupplements = supplements.map((supplement) => {
-      if (supplement.id !== supplementId) return supplement;
-      const nextGroupIds = nextAssigned
-        ? Array.from(new Set([...(supplement.groupIds || []), targetGroupId]))
-        : (supplement.groupIds || []).filter((id) => id !== targetGroupId);
-      return { ...supplement, groupIds: nextGroupIds };
-    });
-
-    setSupplements(nextSupplements);
-
-    try {
-      await toggleSupplementGroupMembership(
-        supplementId,
-        targetGroupId,
-        nextAssigned
-      );
-    } catch (error) {
-      setSupplements((prev) =>
-        prev.map((supplement) => {
-          if (supplement.id !== supplementId) return supplement;
-          return {
-            ...supplement,
-            groupIds: currentlyAssigned
-              ? Array.from(
-                  new Set([...(supplement.groupIds || []), targetGroupId])
-                )
-              : (supplement.groupIds || []).filter((id) => id !== targetGroupId),
-          };
-        })
-      );
-      showNotification({
-        message: "グループ更新に失敗しました",
-      });
-    }
+    setSupplements((prevSupplements) =>
+      toggleGroupMembershipInList(prevSupplements, supplementId, targetGroupId)
+    );
   };
 
   const handleAddGroupFromForm = async (rawName: string): Promise<boolean> => {
@@ -468,7 +566,7 @@ export default function Home() {
     }
   };
 
-  if (loading || (!!user && !isSupplementsLoaded)) {
+  if (loading || isSupplementsLoading) {
     return <LoadingState />;
   }
 
@@ -479,10 +577,7 @@ export default function Home() {
       }`}
     >
       <main className="relative">
-        <FloatingAddButton
-          onClick={handleOpenModal}
-          hidden={isGroupEditMode}
-        />
+        <FloatingAddButton onClick={handleOpenModal} hidden={isGroupEditMode} />
 
         <div className="relative flex flex-col w-screen h-full md:p-10 p-4">
           <HeaderSection
@@ -580,7 +675,7 @@ export default function Home() {
               <button
                 type="button"
                 className="h-16 w-16 p-0 rounded-full bg-transparent shadow-none flex items-center justify-center text-gray-600 hover:text-gray-700"
-                onClick={handleToggleGroupEditMode}
+                onClick={handleEnterGroupEditMode}
                 aria-label="リスト編集"
               >
                 <MdOutlineBookmarkBorder
@@ -594,13 +689,10 @@ export default function Home() {
               <button
                 type="button"
                 className="h-11 px-6 rounded-full text-[16px] font-semibold bg-white text-gray-700 hover:bg-gray-100 transition-colors shadow-[0_4px_12px_rgba(15,23,42,0.2)] whitespace-nowrap inline-flex items-center gap-2"
-                onClick={handleToggleGroupEditMode}
+                onClick={handleEnterGroupEditMode}
                 aria-label="リスト編集"
               >
-                <MdOutlineBookmarkBorder
-                  size={20}
-                  aria-hidden="true"
-                />
+                <MdOutlineBookmarkBorder size={20} aria-hidden="true" />
                 <span>リスト編集</span>
               </button>
             </div>
@@ -613,14 +705,14 @@ export default function Home() {
               <button
                 type="button"
                 className="h-11 px-6 rounded-full text-[16px] font-semibold bg-gray-700 text-white transition-all duration-150 shadow-[0_4px_12px_rgba(15,23,42,0.2)] active:translate-y-[1px] active:shadow-[0_2px_6px_rgba(15,23,42,0.16)] whitespace-nowrap"
-                onClick={handleToggleGroupEditMode}
+                onClick={handleRegisterGroupEdit}
               >
                 登録
               </button>
               <button
                 type="button"
                 className="h-11 px-6 rounded-full text-[16px] font-semibold bg-white text-gray-700 hover:bg-gray-100 transition-all duration-150 shadow-[0_4px_12px_rgba(15,23,42,0.2)] active:translate-y-[1px] active:shadow-[0_2px_6px_rgba(15,23,42,0.16)] whitespace-nowrap"
-                onClick={() => setIsGroupEditMode(false)}
+                onClick={handleCancelGroupEdit}
               >
                 キャンセル
               </button>

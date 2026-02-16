@@ -22,7 +22,11 @@ export function isSupplementData(data: unknown): data is SupplementData {
  * Firestoreから取得したデータに必要なプロパティがない場合でも適切にデフォルト値を設定
  */
 export function convertToSupplementData(apiData: any): SupplementData {
-  const systemGroupIds = new Set(["system-morning", "system-noon", "system-night"]);
+  const systemGroupIds = new Set([
+    "system-morning",
+    "system-noon",
+    "system-night",
+  ]);
   const normalizedImageUrl =
     typeof apiData.imageUrl === "string" && apiData.imageUrl.startsWith("blob:")
       ? ""

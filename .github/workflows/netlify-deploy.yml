@@ -1,4 +1,4 @@
-name: Deploy to Netlify (Production)
+name: Deploy to Netlify
 
 on:
   push:
@@ -23,6 +23,15 @@ jobs:
   deploy-to-netlify:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY || vars.FIREBASE_API_KEY || secrets.NEXT_PUBLIC_FIREBASE_API_KEY || vars.NEXT_PUBLIC_FIREBASE_API_KEY }}
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN || vars.FIREBASE_AUTH_DOMAIN || secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID || vars.FIREBASE_PROJECT_ID || secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID || vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET || vars.FIREBASE_STORAGE_BUCKET || secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || vars.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID || vars.FIREBASE_MESSAGING_SENDER_ID || secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || vars.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+      NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID || vars.FIREBASE_APP_ID || secrets.NEXT_PUBLIC_FIREBASE_APP_ID || vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
     steps:
       # サブモジュールを除外してチェックアウト
@@ -66,44 +75,74 @@ jobs:
         run: npm ci
 
       # TypeScript型チェック
-      - name: Type check
+      - name: Build (Next.js)
         run: npm run build
-        env:
-          # Firebase環境設定（本番用）
-          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
-          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN }}
-          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
-          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
-          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
 
-      # ビルド成果物の確認
-      - name: Verify build output
+      - name: Netlify CLI preflight
         run: |
-          echo "📦 Build output structure:"
-          ls -la .next/
-          echo "📊 Build size summary:"
-          du -sh .next/
+          set -euo pipefail
+          [ -n "${NEXT_PUBLIC_FIREBASE_API_KEY:-}" ] || { echo "::error::Missing Firebase env: NEXT_PUBLIC_FIREBASE_API_KEY"; exit 1; }
+          [ -n "${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN:-}" ] || { echo "::error::Missing Firebase env: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"; exit 1; }
+          [ -n "${NEXT_PUBLIC_FIREBASE_PROJECT_ID:-}" ] || { echo "::error::Missing Firebase env: NEXT_PUBLIC_FIREBASE_PROJECT_ID"; exit 1; }
+          [ -n "${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET:-}" ] || { echo "::error::Missing Firebase env: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET"; exit 1; }
+          [ -n "${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID:-}" ] || { echo "::error::Missing Firebase env: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID"; exit 1; }
+          [ -n "${NEXT_PUBLIC_FIREBASE_APP_ID:-}" ] || { echo "::error::Missing Firebase env: NEXT_PUBLIC_FIREBASE_APP_ID"; exit 1; }
+          npx --yes netlify@23.15.1 --version
+          npx --yes netlify@23.15.1 api getSite \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --data "{\"site_id\":\"$NETLIFY_SITE_ID\"}" >/dev/null
+          echo "Netlify preflight passed."
 
-      # Netlifyへデプロイ
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v3
-        with:
-          publish-dir: "./.next"
-          production-deploy: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: |
-            Deploy from GitHub Actions
-            Commit: ${{ github.sha }}
-            Branch: ${{ github.ref_name }}
-            Trigger: ${{ github.event_name }}
-          enable-pull-request-comment: true
-          enable-commit-comment: true
-          overwrites-pull-request-comment: true
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        timeout-minutes: 10
+      - name: Deploy Preview to Netlify (PR)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          DEPLOY_STDOUT="$(mktemp)"
+          DEPLOY_STDERR="$(mktemp)"
+          set +e
+          npx --yes netlify@23.15.1 deploy \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --site "$NETLIFY_SITE_ID" \
+            --build \
+            --context deploy-preview >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Netlify preview deploy failed (exit code: $status)"
+            echo "---- netlify stderr ----"
+            cat "$DEPLOY_STDERR" || true
+            echo "---- netlify stdout ----"
+            cat "$DEPLOY_STDOUT" || true
+            exit "$status"
+          fi
+          cat "$DEPLOY_STDOUT"
+          cp "$DEPLOY_STDOUT" netlify-deploy.log
+
+      - name: Deploy Production to Netlify (main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          set -euo pipefail
+          DEPLOY_STDOUT="$(mktemp)"
+          DEPLOY_STDERR="$(mktemp)"
+          set +e
+          npx --yes netlify@23.15.1 deploy \
+            --auth "$NETLIFY_AUTH_TOKEN" \
+            --site "$NETLIFY_SITE_ID" \
+            --prod \
+            --build \
+            --context production >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Netlify production deploy failed (exit code: $status)"
+            echo "---- netlify stderr ----"
+            cat "$DEPLOY_STDERR" || true
+            echo "---- netlify stdout ----"
+            cat "$DEPLOY_STDOUT" || true
+            exit "$status"
+          fi
+          cat "$DEPLOY_STDOUT"
+          cp "$DEPLOY_STDOUT" netlify-deploy.log
 
       # デプロイ結果のサマリー
       - name: Deployment summary
@@ -115,9 +154,10 @@ jobs:
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment**: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'Production' || 'Preview' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy URL**: workflow logs を参照" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ✅ Quality Assurance" >> $GITHUB_STEP_SUMMARY
           echo "- **Submodule Handling**: .cursor development config excluded from production" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build Verification**: TypeScript compilation successful" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Verification**: Next.js build successful" >> $GITHUB_STEP_SUMMARY
           echo "- **Firebase Integration**: Environment variables configured" >> $GITHUB_STEP_SUMMARY
-          echo "- **Production Ready**: Clean deployment without development dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy Strategy**: PR=Deploy Preview / main=Production" >> $GITHUB_STEP_SUMMARY

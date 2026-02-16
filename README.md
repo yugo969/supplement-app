@@ -2,7 +2,7 @@
 
 サプリメント服用管理アプリケーション - 個人開発による品質重視のWebアプリ
 
-![Next.js](https://img.shields.io/badge/Next.js-15.3.3-black)
+![Next.js](https://img.shields.io/badge/Next.js-15.5.9-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.6.2-blue)
 ![Firebase](https://img.shields.io/badge/Firebase-11.8.1-orange)
 ![Playwright](https://img.shields.io/badge/E2E-Playwright-green)
@@ -26,7 +26,7 @@ Firebase認証とFirestoreを活用し、安全で高速なデータ管理を実
 
 ### フロントエンド
 
-- **Framework**: Next.js 15.3.3 (App Router)
+- **Framework**: Next.js 15.5.9 (App Router)
 - **Language**: TypeScript 5.6.2
 - **UI**: Tailwind CSS 3.3.3 + Radix UI
 - **Animation**: Framer Motion 12.9.2

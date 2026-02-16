@@ -4,9 +4,9 @@ import {
   convertToSupplementDataArray,
 } from "./type-guards";
 import { SupplementData, SupplementGroup } from "@/schemas/supplement";
+import { GROUP_NAME_MAX_LENGTH } from "@/constants/groups";
 
 const firestore = firebase.firestore();
-const GROUP_NAME_MAX_LENGTH = 12;
 
 // supplement-appのコレクションとサブコレクションを参照
 const getSupplementsCollection = () => {
@@ -318,7 +318,9 @@ export const addSupplementGroup = async (name: string): Promise<string> => {
     throw new Error("グループ名が空です");
   }
   if (Array.from(trimmedName).length > GROUP_NAME_MAX_LENGTH) {
-    throw new Error(`グループ名は${GROUP_NAME_MAX_LENGTH}文字以内で入力してください`);
+    throw new Error(
+      `グループ名は${GROUP_NAME_MAX_LENGTH}文字以内で入力してください`
+    );
   }
 
   const groupsRef = getSupplementGroupsCollection();
@@ -349,6 +351,14 @@ export const toggleSupplementGroupMembership = async (
     );
   }
 
+  const groupRef = getSupplementGroupsCollection().doc(groupId);
+  const groupDoc = await groupRef.get();
+  if (!groupDoc.exists || groupDoc.data()?.userId !== user.uid) {
+    throw new Error(
+      "指定されたグループが存在しないか、アクセス権限がありません"
+    );
+  }
+
   await supplementRef.update({
     groupIds: shouldAssign
       ? firebase.firestore.FieldValue.arrayUnion(groupId)
@@ -365,7 +375,9 @@ export const deleteSupplementGroup = async (groupId: string) => {
   const groupRef = getSupplementGroupsCollection().doc(groupId);
   const groupDoc = await groupRef.get();
   if (!groupDoc.exists || groupDoc.data()?.userId !== user.uid) {
-    throw new Error("指定されたグループが存在しないか、アクセス権限がありません");
+    throw new Error(
+      "指定されたグループが存在しないか、アクセス権限がありません"
+    );
   }
 
   const linkedSupplements = await getSupplementsCollection()

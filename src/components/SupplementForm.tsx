@@ -37,218 +37,8 @@ import {
 } from "@/schemas/supplement";
 import { motion } from "framer-motion";
 import ImageCropDialog from "@/components/ImageCropDialog";
-
-// カスタムSVGアイコンコンポーネント
-const MorningIcon = ({ size = 24 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    {/* 地平線 */}
-    <line
-      x1="2"
-      y1="15"
-      x2="22"
-      y2="15"
-      stroke="currentColor"
-      strokeWidth="1.5"
-    />
-    {/* 太陽（地平線の上の半円のみ） */}
-    <path d="M 5.5 15 A 6.5 6.5 0 0 1 18.5 15" fill="currentColor" />
-
-    {/* 放射状の光線（ダッシュパターン、半円の境界から始まる） */}
-    {/* 上方向の光線 */}
-    <line
-      x1="12"
-      y1="8.5"
-      x2="12"
-      y2="1"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeDasharray="2 1.5"
-      strokeLinecap="round"
-    />
-
-    {/* 左上斜め30度 */}
-    <line
-      x1="9.4"
-      y1="10.1"
-      x2="6"
-      y2="3"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeDasharray="2 1.5"
-      strokeLinecap="round"
-    />
-
-    {/* 左上斜め60度 */}
-    <line
-      x1="7.4"
-      y1="12.3"
-      x2="3"
-      y2="6"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeDasharray="2 1.5"
-      strokeLinecap="round"
-    />
-
-    {/* 左横 */}
-    <line
-      x1="5.5"
-      y1="15"
-      x2="1"
-      y2="15"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeDasharray="2 1.5"
-      strokeLinecap="round"
-    />
-
-    {/* 右上斜め30度 */}
-    <line
-      x1="14.6"
-      y1="10.1"
-      x2="18"
-      y2="3"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeDasharray="2 1.5"
-      strokeLinecap="round"
-    />
-
-    {/* 右上斜め60度 */}
-    <line
-      x1="16.6"
-      y1="12.3"
-      x2="21"
-      y2="6"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeDasharray="2 1.5"
-      strokeLinecap="round"
-    />
-
-    {/* 右横 */}
-    <line
-      x1="18.5"
-      y1="15"
-      x2="23"
-      y2="15"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeDasharray="2 1.5"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const NoonIcon = ({ size = 24 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    {/* 太陽の本体（朝と同じサイズ） */}
-    <circle cx="12" cy="12" r="6.5" fill="currentColor" />
-    {/* 8方向の均等な光線（短め） */}
-    <line
-      x1="12"
-      y1="1"
-      x2="12"
-      y2="4"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <line
-      x1="19.5"
-      y1="4.5"
-      x2="17.5"
-      y2="6.5"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <line
-      x1="23"
-      y1="12"
-      x2="20"
-      y2="12"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <line
-      x1="19.5"
-      y1="19.5"
-      x2="17.5"
-      y2="17.5"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <line
-      x1="12"
-      y1="23"
-      x2="12"
-      y2="20"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <line
-      x1="4.5"
-      y1="19.5"
-      x2="6.5"
-      y2="17.5"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <line
-      x1="1"
-      y1="12"
-      x2="4"
-      y2="12"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-    <line
-      x1="4.5"
-      y1="4.5"
-      x2="6.5"
-      y2="6.5"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-const NightIcon = ({ size = 24 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    {/* 三日月（右上に配置） */}
-    <path
-      d="M17 9.3A7 7 0 1 1 10.7 3 5.6 5.6 0 0 0 17 9.3z"
-      fill="currentColor"
-    />
-    {/* 星（右上エリアに配置） */}
-    <circle cx="14" cy="5" r="0.7" fill="currentColor" />
-    <circle cx="15.5" cy="6.5" r="0.5" fill="currentColor" />
-    <circle cx="13" cy="7" r="0.4" fill="currentColor" />
-  </svg>
-);
-
-// タイミングアイコン設定
-const TIMING_ICONS = {
-  morning: <MorningIcon size={24} />,
-  noon: <NoonIcon size={24} />,
-  night: <NightIcon size={24} />,
-};
-
-// タイミングラベル設定
-const TIMING_LABELS = {
-  morning: "朝",
-  noon: "昼",
-  night: "夜",
-};
-const GROUP_NAME_MAX_LENGTH = 12;
-
+import { GROUP_NAME_MAX_LENGTH } from "@/constants/groups";
+import { TIMING_ICONS } from "@/components/timing-icons";
 interface SupplementFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -552,7 +342,8 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                   </div>
                   {isCreatingGroup && isGroupNameTooLong && (
                     <p className="text-xs text-red-600">
-                      グループ名は{GROUP_NAME_MAX_LENGTH}文字以内で入力してください
+                      グループ名は{GROUP_NAME_MAX_LENGTH}
+                      文字以内で入力してください
                     </p>
                   )}
 
@@ -778,29 +569,34 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <label
-                              className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
-                                field.value
-                                  ? "bg-white"
-                                  : "bg-white hover:bg-gray-50"
-                              }`}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => field.onChange(!field.value)}
-                                className="sr-only"
-                                aria-label={`朝の服用を${field.value ? "選択解除" : "選択"}`}
-                              />
-                              <span className="text-gray-700 flex items-center gap-1">
-                                {TIMING_ICONS.morning}
-                              </span>
-                              {field.value && (
-                                <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
-                                  <MdCheck size={12} className="text-white" />
-                                </div>
-                              )}
-                            </label>
+                            <input
+                              id="timing_morning_input"
+                              type="checkbox"
+                              checked={!!field.value}
+                              onChange={(event) =>
+                                field.onChange(event.target.checked)
+                              }
+                              className="sr-only"
+                              aria-label={`朝の服用を${field.value ? "選択解除" : "選択"}`}
+                            />
                           </FormControl>
+                          <label
+                            htmlFor="timing_morning_input"
+                            className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
+                              field.value
+                                ? "bg-white"
+                                : "bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            <span className="text-gray-700 flex items-center gap-1">
+                              {TIMING_ICONS.morning}
+                            </span>
+                            {field.value && (
+                              <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
+                                <MdCheck size={12} className="text-white" />
+                              </div>
+                            )}
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -811,29 +607,34 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <label
-                              className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
-                                field.value
-                                  ? "bg-white"
-                                  : "bg-white hover:bg-gray-50"
-                              }`}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => field.onChange(!field.value)}
-                                className="sr-only"
-                                aria-label={`昼の服用を${field.value ? "選択解除" : "選択"}`}
-                              />
-                              <span className="text-gray-700 flex items-center gap-1">
-                                {TIMING_ICONS.noon}
-                              </span>
-                              {field.value && (
-                                <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
-                                  <MdCheck size={12} className="text-white" />
-                                </div>
-                              )}
-                            </label>
+                            <input
+                              id="timing_noon_input"
+                              type="checkbox"
+                              checked={!!field.value}
+                              onChange={(event) =>
+                                field.onChange(event.target.checked)
+                              }
+                              className="sr-only"
+                              aria-label={`昼の服用を${field.value ? "選択解除" : "選択"}`}
+                            />
                           </FormControl>
+                          <label
+                            htmlFor="timing_noon_input"
+                            className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
+                              field.value
+                                ? "bg-white"
+                                : "bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            <span className="text-gray-700 flex items-center gap-1">
+                              {TIMING_ICONS.noon}
+                            </span>
+                            {field.value && (
+                              <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
+                                <MdCheck size={12} className="text-white" />
+                              </div>
+                            )}
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -844,29 +645,34 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <label
-                              className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
-                                field.value
-                                  ? "bg-white"
-                                  : "bg-white hover:bg-gray-50"
-                              }`}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => field.onChange(!field.value)}
-                                className="sr-only"
-                                aria-label={`夜の服用を${field.value ? "選択解除" : "選択"}`}
-                              />
-                              <span className="text-gray-700 flex items-center gap-1">
-                                {TIMING_ICONS.night}
-                              </span>
-                              {field.value && (
-                                <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
-                                  <MdCheck size={12} className="text-white" />
-                                </div>
-                              )}
-                            </label>
+                            <input
+                              id="timing_night_input"
+                              type="checkbox"
+                              checked={!!field.value}
+                              onChange={(event) =>
+                                field.onChange(event.target.checked)
+                              }
+                              className="sr-only"
+                              aria-label={`夜の服用を${field.value ? "選択解除" : "選択"}`}
+                            />
                           </FormControl>
+                          <label
+                            htmlFor="timing_night_input"
+                            className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
+                              field.value
+                                ? "bg-white"
+                                : "bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            <span className="text-gray-700 flex items-center gap-1">
+                              {TIMING_ICONS.night}
+                            </span>
+                            {field.value && (
+                              <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
+                                <MdCheck size={12} className="text-white" />
+                              </div>
+                            )}
+                          </label>
                         </FormItem>
                       )}
                     />
