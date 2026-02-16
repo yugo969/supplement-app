@@ -80,13 +80,16 @@ jobs:
       - name: Deploy Preview to Netlify (PR)
         if: github.event_name == 'pull_request'
         run: |
-          npx netlify deploy \
+          set -euo pipefail
+          DEPLOY_OUTPUT=$(npx netlify deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
             --context deploy-preview \
             --alias "pr-${{ github.event.pull_request.number }}" \
             --message "PR #${{ github.event.pull_request.number }} / ${{ github.sha }}" \
-            --json | tee netlify-deploy.json
+            --json)
+          printf "%s\n" "$DEPLOY_OUTPUT" > netlify-deploy.json
+          echo "$DEPLOY_OUTPUT"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -94,13 +97,16 @@ jobs:
       - name: Deploy Production to Netlify (main)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          npx netlify deploy \
+          set -euo pipefail
+          DEPLOY_OUTPUT=$(npx netlify deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
             --context production \
             --prod \
             --message "main / ${{ github.sha }}" \
-            --json | tee netlify-deploy.json
+            --json)
+          printf "%s\n" "$DEPLOY_OUTPUT" > netlify-deploy.json
+          echo "$DEPLOY_OUTPUT"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -115,11 +121,13 @@ jobs:
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Environment**: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'Production' || 'Preview' }}" >> $GITHUB_STEP_SUMMARY
-          if [ -f netlify-deploy.json ]; then
-            deploy_url=$(node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync('netlify-deploy.json','utf8'));console.log(d.deploy_url||'')"); 
-            logs_url=$(node -e "const fs=require('fs');const d=JSON.parse(fs.readFileSync('netlify-deploy.json','utf8'));console.log(d.logs||'')");
+          if [ -s netlify-deploy.json ]; then
+            deploy_url=$(node -e "const fs=require('fs');try{const d=JSON.parse(fs.readFileSync('netlify-deploy.json','utf8'));console.log(d.deploy_url||'')}catch(e){console.log('')}")
+            logs_url=$(node -e "const fs=require('fs');try{const d=JSON.parse(fs.readFileSync('netlify-deploy.json','utf8'));console.log(d.logs||'')}catch(e){console.log('')}")
             [ -n "$deploy_url" ] && echo "- **Deploy URL**: $deploy_url" >> $GITHUB_STEP_SUMMARY
             [ -n "$logs_url" ] && echo "- **Logs URL**: $logs_url" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Deploy URL**: (not available)" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ✅ Quality Assurance" >> $GITHUB_STEP_SUMMARY
