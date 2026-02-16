@@ -93,22 +93,6 @@ jobs:
             --data "{\"site_id\":\"$NETLIFY_SITE_ID\"}" >/dev/null
           echo "Netlify preflight passed."
 
-      - name: Netlify build (PR)
-        if: github.event_name == 'pull_request'
-        run: |
-          set -euo pipefail
-          npx --yes netlify@23.15.1 build \
-            --auth "$NETLIFY_AUTH_TOKEN" \
-            --context deploy-preview
-
-      - name: Netlify build (main)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          set -euo pipefail
-          npx --yes netlify@23.15.1 build \
-            --auth "$NETLIFY_AUTH_TOKEN" \
-            --context production
-
       - name: Deploy Preview to Netlify (PR)
         if: github.event_name == 'pull_request'
         run: |
@@ -119,9 +103,8 @@ jobs:
           npx --yes netlify@23.15.1 deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
-            --alias "pr-${{ github.event.pull_request.number }}" \
-            --message "PR #${{ github.event.pull_request.number }} / ${{ github.sha }}" \
-            --no-build \
+            --build \
+            --context deploy-preview \
             --json >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
           status=$?
           set -e
@@ -147,8 +130,8 @@ jobs:
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
             --prod \
-            --message "main / ${{ github.sha }}" \
-            --no-build \
+            --build \
+            --context production \
             --json >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
           status=$?
           set -e
