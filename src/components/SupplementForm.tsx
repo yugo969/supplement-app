@@ -783,24 +783,24 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                               className="sr-only"
                               aria-label={`朝の服用を${field.value ? "選択解除" : "選択"}`}
                             />
-                            <label
-                              htmlFor="timing_morning_input"
-                              className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
-                                field.value
-                                  ? "bg-white"
-                                  : "bg-white hover:bg-gray-50"
-                              }`}
-                            >
-                              <span className="text-gray-700 flex items-center gap-1">
-                                {TIMING_ICONS.morning}
-                              </span>
-                              {field.value && (
-                                <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
-                                  <MdCheck size={12} className="text-white" />
-                                </div>
-                              )}
-                            </label>
                           </FormControl>
+                          <label
+                            htmlFor="timing_morning_input"
+                            className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
+                              field.value
+                                ? "bg-white"
+                                : "bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            <span className="text-gray-700 flex items-center gap-1">
+                              {TIMING_ICONS.morning}
+                            </span>
+                            {field.value && (
+                              <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
+                                <MdCheck size={12} className="text-white" />
+                              </div>
+                            )}
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -821,24 +821,24 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                               className="sr-only"
                               aria-label={`昼の服用を${field.value ? "選択解除" : "選択"}`}
                             />
-                            <label
-                              htmlFor="timing_noon_input"
-                              className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
-                                field.value
-                                  ? "bg-white"
-                                  : "bg-white hover:bg-gray-50"
-                              }`}
-                            >
-                              <span className="text-gray-700 flex items-center gap-1">
-                                {TIMING_ICONS.noon}
-                              </span>
-                              {field.value && (
-                                <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
-                                  <MdCheck size={12} className="text-white" />
-                                </div>
-                              )}
-                            </label>
                           </FormControl>
+                          <label
+                            htmlFor="timing_noon_input"
+                            className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
+                              field.value
+                                ? "bg-white"
+                                : "bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            <span className="text-gray-700 flex items-center gap-1">
+                              {TIMING_ICONS.noon}
+                            </span>
+                            {field.value && (
+                              <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
+                                <MdCheck size={12} className="text-white" />
+                              </div>
+                            )}
+                          </label>
                         </FormItem>
                       )}
                     />
@@ -859,24 +859,24 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                               className="sr-only"
                               aria-label={`夜の服用を${field.value ? "選択解除" : "選択"}`}
                             />
-                            <label
-                              htmlFor="timing_night_input"
-                              className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
-                                field.value
-                                  ? "bg-white"
-                                  : "bg-white hover:bg-gray-50"
-                              }`}
-                            >
-                              <span className="text-gray-700 flex items-center gap-1">
-                                {TIMING_ICONS.night}
-                              </span>
-                              {field.value && (
-                                <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
-                                  <MdCheck size={12} className="text-white" />
-                                </div>
-                              )}
-                            </label>
                           </FormControl>
+                          <label
+                            htmlFor="timing_night_input"
+                            className={`relative flex items-center rounded-full px-3 py-1 text-xs border border-gray-200 cursor-pointer transition-all shadow-sm hover:shadow-md ${
+                              field.value
+                                ? "bg-white"
+                                : "bg-white hover:bg-gray-50"
+                            }`}
+                          >
+                            <span className="text-gray-700 flex items-center gap-1">
+                              {TIMING_ICONS.night}
+                            </span>
+                            {field.value && (
+                              <div className="ml-1.5 flex items-center justify-center w-4 h-4 bg-gray-700 rounded-full">
+                                <MdCheck size={12} className="text-white" />
+                              </div>
+                            )}
+                          </label>
                         </FormItem>
                       )}
                     />
