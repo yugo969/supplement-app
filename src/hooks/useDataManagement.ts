@@ -58,10 +58,11 @@ export const useDataManagement = ({
           return supplement;
         });
 
-        Promise.all(updatedData).then((result) => {
-          if (!isMounted) return;
-          setSupplements(result);
-        });
+        return Promise.all(updatedData);
+      })
+      .then((result) => {
+        if (!isMounted) return;
+        setSupplements(result);
       })
       .finally(() => {
         if (!isMounted) return;

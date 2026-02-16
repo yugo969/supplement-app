@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Cropper from "react-easy-crop";
 import {
   Dialog,
@@ -77,6 +77,13 @@ const ImageCropDialog: React.FC<ImageCropDialogProps> = ({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CropArea | null>(
     null
   );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+  }, [isOpen, imageSrc]);
 
   const onCropChange = useCallback((crop: { x: number; y: number }) => {
     setCrop(crop);
