@@ -81,15 +81,28 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           set -euo pipefail
-          DEPLOY_OUTPUT=$(npx netlify deploy \
+          DEPLOY_STDOUT="$(mktemp)"
+          DEPLOY_STDERR="$(mktemp)"
+          set +e
+          npx netlify deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
             --context deploy-preview \
             --alias "pr-${{ github.event.pull_request.number }}" \
             --message "PR #${{ github.event.pull_request.number }} / ${{ github.sha }}" \
-            --json)
-          printf "%s\n" "$DEPLOY_OUTPUT" > netlify-deploy.json
-          echo "$DEPLOY_OUTPUT"
+            --json >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Netlify preview deploy failed (exit code: $status)"
+            echo "---- netlify stderr ----"
+            cat "$DEPLOY_STDERR" || true
+            echo "---- netlify stdout ----"
+            cat "$DEPLOY_STDOUT" || true
+            exit "$status"
+          fi
+          cat "$DEPLOY_STDOUT"
+          cp "$DEPLOY_STDOUT" netlify-deploy.json
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -98,15 +111,28 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           set -euo pipefail
-          DEPLOY_OUTPUT=$(npx netlify deploy \
+          DEPLOY_STDOUT="$(mktemp)"
+          DEPLOY_STDERR="$(mktemp)"
+          set +e
+          npx netlify deploy \
             --auth "$NETLIFY_AUTH_TOKEN" \
             --site "$NETLIFY_SITE_ID" \
             --context production \
             --prod \
             --message "main / ${{ github.sha }}" \
-            --json)
-          printf "%s\n" "$DEPLOY_OUTPUT" > netlify-deploy.json
-          echo "$DEPLOY_OUTPUT"
+            --json >"$DEPLOY_STDOUT" 2>"$DEPLOY_STDERR"
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Netlify production deploy failed (exit code: $status)"
+            echo "---- netlify stderr ----"
+            cat "$DEPLOY_STDERR" || true
+            echo "---- netlify stdout ----"
+            cat "$DEPLOY_STDOUT" || true
+            exit "$status"
+          fi
+          cat "$DEPLOY_STDOUT"
+          cp "$DEPLOY_STDOUT" netlify-deploy.json
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
