@@ -1,8 +1,20 @@
+const path = require("path");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  outputFileTracingRoot: path.join(__dirname),
   images: {
-    domains: ["firebasestorage.googleapis.com", "storage.googleapis.com"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "firebasestorage.googleapis.com",
+      },
+      {
+        protocol: "https",
+        hostname: "storage.googleapis.com",
+      },
+    ],
   },
 };
 
