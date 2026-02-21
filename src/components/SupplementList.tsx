@@ -37,7 +37,7 @@ const SupplementList: React.FC<SupplementListProps> = ({
 }) => {
   return (
     <section
-      className="flex flex-col gap-3 md:gap-4"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 justify-items-center"
       aria-label="サプリメント一覧"
     >
       {supplements.map((supplement) => (
