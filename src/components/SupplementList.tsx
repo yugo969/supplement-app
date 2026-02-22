@@ -18,6 +18,7 @@ interface SupplementListProps {
   onToggleGroupMembership: (supplementId: string) => void;
   showFeedback: boolean;
   animatingIds: string[];
+  cardVariant?: "default" | "a";
 }
 
 const SupplementList: React.FC<SupplementListProps> = ({
@@ -34,10 +35,11 @@ const SupplementList: React.FC<SupplementListProps> = ({
   onToggleGroupMembership,
   showFeedback,
   animatingIds,
+  cardVariant = "default",
 }) => {
   return (
     <section
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 justify-items-center"
+      className="mx-auto grid w-full grid-cols-1 justify-center gap-y-3 gap-x-[clamp(8px,2.5vw,32px)] md:gap-y-4 md:[grid-template-columns:repeat(auto-fit,minmax(360px,390px))]"
       aria-label="サプリメント一覧"
     >
       {supplements.map((supplement) => (
@@ -56,6 +58,7 @@ const SupplementList: React.FC<SupplementListProps> = ({
           onToggleGroupMembership={onToggleGroupMembership}
           showFeedback={showFeedback}
           animatingIds={animatingIds}
+          cardVariant={cardVariant}
         />
       ))}
     </section>

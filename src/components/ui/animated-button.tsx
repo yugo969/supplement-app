@@ -14,11 +14,11 @@ const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(
         className={cn(
           "relative overflow-hidden rounded-full border border-gray-300 px-4 py-2 h-10 text-sm font-medium min-w-[48px]",
           "transition-all duration-200 ease-in-out",
-          "shadow-md hover:shadow-lg focus:shadow-xl",
+          "shadow-[0_4px_10px_rgba(15,23,42,0.18)] focus:shadow-[0_6px_14px_rgba(15,23,42,0.2)]",
           "outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1",
-          "hover:scale-105 active:scale-95",
+          "hover:translate-y-[1px] hover:shadow-[0_2px_6px_rgba(15,23,42,0.16)] active:translate-y-[1px] active:shadow-[0_2px_6px_rgba(15,23,42,0.16)]",
           disabled &&
-            "opacity-70 cursor-not-allowed hover:scale-100 active:scale-100",
+            "opacity-70 cursor-not-allowed hover:translate-y-0 hover:shadow-[0_4px_10px_rgba(15,23,42,0.18)] active:translate-y-0 active:shadow-[0_4px_10px_rgba(15,23,42,0.18)]",
           className
         )}
         ref={ref}

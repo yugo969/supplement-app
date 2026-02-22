@@ -18,7 +18,7 @@ const AnimatedCard = ({ className, children, ...props }: AnimatedCardProps) => {
       whileHover="hover"
       variants={cardHoverVariants}
       className={cn(
-        "relative pb-12 rounded-xl border bg-card text-card-foreground shadow focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background",
+        "relative rounded-xl border bg-card text-card-foreground shadow focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background",
         className
       )}
       {...props}

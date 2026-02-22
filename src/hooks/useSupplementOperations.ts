@@ -143,15 +143,16 @@ export const useSupplementOperations = ({
     const isTimingMode = (data.dosage_method || "timing") === "timing";
 
     // countモードで朝昼夜フラグが残ると意図しないシステムグループ表示になるため保存時に正規化する
+    // 推奨服用方法（食前/食後/空腹時/就寝前/頓服）はdosage_methodに関係なく保持する
     const timingFields = {
       timing_morning: isTimingMode ? !!data.timing_morning : false,
       timing_noon: isTimingMode ? !!data.timing_noon : false,
       timing_night: isTimingMode ? !!data.timing_night : false,
-      timing_before_meal: isTimingMode ? !!data.timing_before_meal : false,
-      timing_after_meal: isTimingMode ? !!data.timing_after_meal : false,
-      timing_empty_stomach: isTimingMode ? !!data.timing_empty_stomach : false,
-      timing_bedtime: isTimingMode ? !!data.timing_bedtime : false,
-      timing_as_needed: isTimingMode ? !!data.timing_as_needed : false,
+      timing_before_meal: !!data.timing_before_meal,
+      timing_after_meal: !!data.timing_after_meal,
+      timing_empty_stomach: !!data.timing_empty_stomach,
+      timing_bedtime: !!data.timing_bedtime,
+      timing_as_needed: !!data.timing_as_needed,
     };
 
     // dosage_methodがundefinedの場合は'timing'をデフォルト値として使用

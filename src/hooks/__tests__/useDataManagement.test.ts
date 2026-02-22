@@ -28,7 +28,7 @@ describe("useDataManagement", () => {
     vi.clearAllMocks();
   });
 
-  it("supplement data processing完了後にloadingをfalseへ戻す", async () => {
+  it("supplement data processing完了後にloaded user idを更新する", async () => {
     const deferred = createDeferred<void>();
 
     mockedGetSupplements.mockResolvedValue([
@@ -43,13 +43,13 @@ describe("useDataManagement", () => {
     mockedResetTimingsIfDateChanged.mockImplementation(() => deferred.promise);
 
     const setSupplements = vi.fn();
-    const setIsSupplementsLoading = vi.fn();
+    const setLoadedSupplementsUserId = vi.fn();
 
     const { unmount } = renderHook(() =>
       useDataManagement({
         user: { uid: "user-1" },
         setSupplements,
-        setIsSupplementsLoading,
+        setLoadedSupplementsUserId,
       })
     );
 
@@ -57,9 +57,8 @@ describe("useDataManagement", () => {
       expect(mockedGetSupplements).toHaveBeenCalledTimes(1);
     });
 
-    expect(setIsSupplementsLoading).toHaveBeenCalledWith(true);
     expect(setSupplements).not.toHaveBeenCalled();
-    expect(setIsSupplementsLoading).not.toHaveBeenCalledWith(false);
+    expect(setLoadedSupplementsUserId).not.toHaveBeenCalled();
 
     deferred.resolve();
 
@@ -67,7 +66,7 @@ describe("useDataManagement", () => {
       expect(setSupplements).toHaveBeenCalledTimes(1);
     });
     await waitFor(() => {
-      expect(setIsSupplementsLoading).toHaveBeenLastCalledWith(false);
+      expect(setLoadedSupplementsUserId).toHaveBeenLastCalledWith("user-1");
     });
 
     unmount();

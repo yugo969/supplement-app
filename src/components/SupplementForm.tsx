@@ -429,9 +429,7 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                     name="intake_amount"
                     render={({ field }) => (
                       <FormItem className="flex-1">
-                        <FormLabel htmlFor="intake_amount">
-                          一回の服用量
-                        </FormLabel>
+                        <FormLabel htmlFor="intake_amount">1回の用量</FormLabel>
                         <div className="flex">
                           <Input
                             id="intake_amount"
@@ -444,7 +442,7 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                               const value = e.target.value;
                               field.onChange(value === "" ? "" : value);
                             }}
-                            aria-label="一回の服用量の数値"
+                            aria-label="1回の用量の数値"
                             aria-required="true"
                             placeholder="数値を入力"
                           />
@@ -457,7 +455,7 @@ const SupplementForm: React.FC<SupplementFormProps> = ({
                                 required: "単位は必須です",
                               })}
                               onChange={onUnitChange}
-                              aria-label="一回の服用量の単位"
+                              aria-label="1回の用量の単位"
                               aria-required="true"
                             >
                               <option value="" disabled>

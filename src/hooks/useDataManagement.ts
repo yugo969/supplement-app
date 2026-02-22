@@ -9,27 +9,28 @@ import {
 interface UseDataManagementProps {
   user: any;
   setSupplements: React.Dispatch<React.SetStateAction<SupplementData[]>>;
-  setIsSupplementsLoading?: React.Dispatch<React.SetStateAction<boolean>>;
+  setLoadedSupplementsUserId?: React.Dispatch<
+    React.SetStateAction<string | null>
+  >;
 }
 
 export const useDataManagement = ({
   user,
   setSupplements,
-  setIsSupplementsLoading,
+  setLoadedSupplementsUserId,
 }: UseDataManagementProps) => {
   // 初回ロード時のデータ取得とリセット処理
   useEffect(() => {
     let isMounted = true;
+    const userId = user?.uid ?? null;
 
-    if (!user) {
+    if (!userId) {
       setSupplements([]);
-      setIsSupplementsLoading?.(false);
+      setLoadedSupplementsUserId?.(null);
       return () => {
         isMounted = false;
       };
     }
-
-    setIsSupplementsLoading?.(true);
 
     getSupplements()
       .then((data) => {
@@ -66,13 +67,13 @@ export const useDataManagement = ({
       })
       .finally(() => {
         if (!isMounted) return;
-        setIsSupplementsLoading?.(false);
+        setLoadedSupplementsUserId?.(userId);
       });
 
     return () => {
       isMounted = false;
     };
-  }, [user, setSupplements, setIsSupplementsLoading]);
+  }, [user, setSupplements, setLoadedSupplementsUserId]);
 
   // 定期的に日付をチェックして変更があればリロード
   useEffect(() => {

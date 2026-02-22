@@ -51,10 +51,12 @@ type RecommendedIntakeInfoProps = {
     bedtime: boolean;
     as_needed?: boolean;
   };
+  compact?: boolean;
 };
 
 const RecommendedIntakeInfo: React.FC<RecommendedIntakeInfoProps> = ({
   timings,
+  compact = false,
 }) => {
   const { before_meal, after_meal, empty_stomach, bedtime, as_needed } =
     timings;
@@ -134,13 +136,14 @@ const RecommendedIntakeInfo: React.FC<RecommendedIntakeInfoProps> = ({
   if (!hasActiveTimings) return null;
 
   return (
-    <div className="mt-2 relative" ref={containerRef}>
+    <div className={compact ? "relative" : "mt-2 relative"} ref={containerRef}>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center justify-center gap-1 text-xs text-gray-600"
       >
         <button
+          type="button"
           onClick={toggleExpand}
           className="flex items-center text-gray-500 hover:text-gray-700 transition-colors"
           aria-expanded={isExpanded}
@@ -171,6 +174,7 @@ const RecommendedIntakeInfo: React.FC<RecommendedIntakeInfoProps> = ({
               {activeTimings.map((timing) => (
                 <div key={timing} className="relative z-10">
                   <motion.button
+                    type="button"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="flex items-center bg-white rounded-full px-2 py-0.5 border border-gray-200 shadow-sm"
@@ -199,7 +203,6 @@ const RecommendedIntakeInfo: React.FC<RecommendedIntakeInfoProps> = ({
                   exit={{ opacity: 0, scale: 0.9 }}
                   className="absolute z-50 pointer-events-none"
                   style={{
-                    // top: "-24px",
                     bottom: "-8px",
                     width: "calc(100% + 16px)",
                     maxWidth: "300px",

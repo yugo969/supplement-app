@@ -21,6 +21,31 @@ const LoginPage: React.FC = () => {
   const router = useRouter();
   const [authError, setAuthError] = useState<string | null>(null);
 
+  const getAuthErrorMessage = (error: any): string => {
+    const code = error?.code as string | undefined;
+
+    switch (code) {
+      case "auth/user-not-found":
+      case "auth/wrong-password":
+      case "auth/invalid-credential":
+        return "メールアドレスまたはパスワードが正しくありません";
+      case "auth/invalid-email":
+        return "メールアドレスの形式が正しくありません";
+      case "auth/too-many-requests":
+        return "試行回数が上限に達しました。しばらく待ってから再度お試しください。";
+      case "auth/user-disabled":
+        return "このアカウントは無効化されています。管理者にお問い合わせください。";
+      case "auth/network-request-failed":
+        return "ネットワーク接続に失敗しました。通信環境をご確認のうえ再度お試しください。";
+      case "auth/operation-not-allowed":
+        return "このログイン方式は現在利用できません。管理者設定をご確認ください。";
+      default:
+        return code
+          ? `ログインに失敗しました（${code}）。時間をおいて再度お試しください。`
+          : "ログインに失敗しました。時間をおいて再度お試しください。";
+    }
+  };
+
   const onSubmit = async (data: FormData) => {
     setAuthError(null);
     clearErrors();
@@ -31,36 +56,30 @@ const LoginPage: React.FC = () => {
       router.push("/");
     } catch (error: any) {
       console.error(error);
-      switch (error?.code) {
-        case "auth/user-not-found":
-        case "auth/wrong-password":
-        case "auth/invalid-credential":
-          setError("password", {
-            type: "server",
-            message: "メールアドレスまたはパスワードが正しくありません",
-          });
-          break;
-        case "auth/invalid-email":
-          setError("email", {
-            type: "server",
-            message: "メールアドレスの形式が正しくありません",
-          });
-          break;
-        case "auth/too-many-requests":
-          setAuthError(
-            "試行回数が上限に達しました。しばらく待ってから再度お試しください。"
-          );
-          break;
-        case "auth/user-disabled":
-          setAuthError(
-            "このアカウントは無効化されています。管理者にお問い合わせください。"
-          );
-          break;
-        default:
-          setAuthError(
-            "ログインに失敗しました。時間をおいて再度お試しください。"
-          );
+      const code = error?.code as string | undefined;
+      const message = getAuthErrorMessage(error);
+
+      if (
+        code === "auth/user-not-found" ||
+        code === "auth/wrong-password" ||
+        code === "auth/invalid-credential"
+      ) {
+        setError("password", {
+          type: "server",
+          message,
+        });
+        return;
       }
+
+      if (code === "auth/invalid-email") {
+        setError("email", {
+          type: "server",
+          message,
+        });
+        return;
+      }
+
+      setAuthError(message);
     }
   };
 

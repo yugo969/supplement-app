@@ -22,6 +22,7 @@ import LoadingState from "@/components/LoadingState";
 import FloatingAddButton from "@/components/FloatingAddButton";
 import AnimatedFeedback from "@/components/AnimatedFeedback";
 import EmptyStateCard from "@/components/EmptyStateCard";
+import SupplementInfoDensityComparison from "@/components/SupplementInfoDensityComparison";
 import {
   addSupplementGroup,
   deleteSupplementGroup,
@@ -40,7 +41,17 @@ const SYSTEM_GROUPS: SupplementGroup[] = [
 ];
 const UNGROUPED_GROUP_ID = "ungrouped";
 
-export default function Home() {
+type HomeProps = {
+  comparisonScope?: "all" | "a" | "b" | "c";
+  showComparisonSection?: boolean;
+  cardVariant?: "default" | "a";
+};
+
+export default function Home({
+  comparisonScope = "all",
+  showComparisonSection = true,
+  cardVariant = "default",
+}: HomeProps) {
   const methods = useForm<SupplementFormData>({
     resolver: zodResolver(supplementFormSchema) as any,
     defaultValues: {
@@ -76,7 +87,9 @@ export default function Home() {
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [showInfoDetails, setShowInfoDetails] = useState(false);
-  const [isSupplementsLoading, setIsSupplementsLoading] = useState(true);
+  const [loadedSupplementsUserId, setLoadedSupplementsUserId] = useState<
+    string | null
+  >(null);
   const [customGroups, setCustomGroups] = useState<SupplementGroup[]>([]);
   const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [isGroupEditMode, setIsGroupEditMode] = useState(false);
@@ -93,7 +106,10 @@ export default function Home() {
   const { user, loading } = useAuth();
 
   // データ管理（日付変更監視とデータ取得・リセット）
-  useDataManagement({ user, setSupplements, setIsSupplementsLoading });
+  useDataManagement({ user, setSupplements, setLoadedSupplementsUserId });
+  const currentUserId = user?.uid ?? null;
+  const isSupplementsLoading =
+    Boolean(currentUserId) && loadedSupplementsUserId !== currentUserId;
 
   // useNotificationHandlingカスタムフック
   const {
@@ -566,7 +582,7 @@ export default function Home() {
     }
   };
 
-  if (loading || isSupplementsLoading) {
+  if (loading || !user || isSupplementsLoading) {
     return <LoadingState />;
   }
 
@@ -662,7 +678,11 @@ export default function Home() {
               onToggleGroupMembership={handleToggleGroupMembership}
               showFeedback={showFeedback}
               animatingIds={animatingIds}
+              cardVariant={cardVariant}
             />
+          )}
+          {showComparisonSection && (
+            <SupplementInfoDensityComparison scope={comparisonScope} />
           )}
         </div>
 
