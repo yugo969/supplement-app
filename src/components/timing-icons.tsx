@@ -1,6 +1,6 @@
 import React from "react";
 
-export type TimingIconKey = "morning" | "noon" | "night";
+type TimingIconKey = "morning" | "noon" | "night";
 
 const MorningIcon = ({ size = 24 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
