@@ -3,7 +3,7 @@ import { SupplementData, SupplementFormData } from "@/schemas/supplement";
 /**
  * APIから取得したデータがSupplementDataの型に適合しているかをチェックする型ガード
  */
-export function isSupplementData(data: unknown): data is SupplementData {
+function isSupplementData(data: unknown): data is SupplementData {
   return (
     typeof data === "object" &&
     data !== null &&

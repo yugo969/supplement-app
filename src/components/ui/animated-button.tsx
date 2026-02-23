@@ -2,8 +2,7 @@ import { motion } from "framer-motion";
 import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export interface AnimatedButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   checked?: boolean;
   label: ReactNode;
 }

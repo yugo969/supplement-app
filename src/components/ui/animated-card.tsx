@@ -91,7 +91,5 @@ export {
   AnimatedCard,
   AnimatedCardHeader,
   AnimatedCardFooter,
-  AnimatedCardTitle,
-  AnimatedCardDescription,
   AnimatedCardContent,
 };

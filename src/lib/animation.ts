@@ -17,7 +17,7 @@ export const cardHoverVariants: Variants = {
 };
 
 // 服用記録フィードバックアニメーション設定
-export const feedbackVariants: Variants = {
+const feedbackVariants: Variants = {
   hidden: {
     opacity: 0,
     scale: 0.8,

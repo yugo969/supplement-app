@@ -5,7 +5,7 @@ import { supplementFormSchema, type SupplementFormData } from "./form-schemas";
 export type DosageMethod = "timing" | "count";
 
 // タイミングカテゴリの型定義
-export type TimingCategory = {
+type TimingCategory = {
   time?: "morning" | "noon" | "night";
   meal?: "before_meal" | "after_meal" | "empty_stomach" | "bedtime";
 };
