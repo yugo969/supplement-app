@@ -68,3 +68,7 @@ ai-docs-separation-guide.md
 # Netlify
 .netlify/
 dist/
+
+# Local AI/tool artifacts
+.gemini/
+output/
