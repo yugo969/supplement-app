@@ -12,7 +12,7 @@ const basePasswordSchema = z
   .min(8, "パスワードは8文字以上である必要があります");
 
 // ログインフォーム用のZodスキーマ定義
-export const loginSchema = z.object({
+const loginSchema = z.object({
   email: emailSchema,
   password: basePasswordSchema,
 });
@@ -27,5 +27,5 @@ export const signupSchema = z.object({
 });
 
 // 型定義のエクスポート
-export type LoginFormData = z.infer<typeof loginSchema>;
+type LoginFormData = z.infer<typeof loginSchema>;
 export type SignupFormData = z.infer<typeof signupSchema>;

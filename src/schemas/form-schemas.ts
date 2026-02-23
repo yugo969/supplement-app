@@ -1,7 +1,7 @@
 import * as z from "zod";
 
 // 数値フィールド用の共通バリデーション
-export const numberFieldSchema = (fieldName: string) =>
+const numberFieldSchema = (fieldName: string) =>
   z
     .union([z.string(), z.number()])
     .refine(
