@@ -7,19 +7,17 @@ const DEMO_REMAINING = 24;
 const DEMO_DOSAGE = 2;
 const DEMO_UNIT = "錠";
 
-type Variant = "a" | "b" | "c";
+type Variant = "a" | "b";
 type TimingIconSet = "new-icons" | "alt-icons";
 type ComparisonScope = "all" | Variant;
 
 const variants: Array<{
   id: Variant;
   label: string;
-  mode: "timing" | "count";
   iconSet?: TimingIconSet;
 }> = [
-  { id: "a", label: "A案: 2行リスト型", mode: "timing", iconSet: "new-icons" },
-  { id: "b", label: "B案: 1行2分割型", mode: "timing", iconSet: "alt-icons" },
-  { id: "c", label: "C案: バッジ型", mode: "count" },
+  { id: "a", label: "A案: 2行リスト型", iconSet: "new-icons" },
+  { id: "b", label: "B案: 1行2分割型", iconSet: "alt-icons" },
 ];
 
 const ComparisonInfoBlock = ({ variant }: { variant: Variant }) => {
@@ -60,18 +58,7 @@ const ComparisonInfoBlock = ({ variant }: { variant: Variant }) => {
     );
   }
 
-  return (
-    <div className="flex flex-col items-end gap-1 text-xs">
-      <span className="rounded-full border border-gray-300 bg-white px-2 py-0.5 text-gray-700">
-        在庫: {DEMO_REMAINING}
-        {DEMO_UNIT}
-      </span>
-      <span className="rounded-full border border-gray-300 bg-white px-2 py-0.5 text-gray-700">
-        用量: {DEMO_DOSAGE}
-        {DEMO_UNIT}
-      </span>
-    </div>
-  );
+  return null;
 };
 
 const NEW_TIMING_ICONS: Record<TimingIconKey, JSX.Element> = {
@@ -118,21 +105,6 @@ const DemoGroupBadges = () => (
   </div>
 );
 
-const DemoCountButtons = () => (
-  <div className="flex h-9 items-center rounded-full border border-gray-300 bg-white text-sm text-gray-700 shadow-[0_4px_10px_rgba(15,23,42,0.12)]">
-    <span className="flex h-9 w-9 items-center justify-center border-r border-gray-300">
-      -
-    </span>
-    <span className="flex items-center gap-1 px-2.5">
-      <span className="h-2 w-2 rounded-full bg-gray-500" />
-      <span className="h-2 w-2 rounded-full bg-gray-500" />
-    </span>
-    <span className="flex h-9 w-9 items-center justify-center border-l border-gray-300">
-      +
-    </span>
-  </div>
-);
-
 const SupplementInfoDensityComparison = ({
   scope = "all",
 }: {
@@ -159,7 +131,7 @@ const SupplementInfoDensityComparison = ({
               <span className="font-medium text-gray-700">
                 {variant.id.toUpperCase()}案
               </span>
-              <span>{variant.label.replace(/^[A-C]案:\s*/, "")}</span>
+              <span>{variant.label.replace(/^[A-B]案:\s*/, "")}</span>
             </div>
 
             <article
@@ -183,13 +155,7 @@ const SupplementInfoDensityComparison = ({
 
                   <DemoGroupBadges />
 
-                  {variant.mode === "timing" ? (
-                    <DemoTimingButtons
-                      iconSet={variant.iconSet ?? "new-icons"}
-                    />
-                  ) : (
-                    <DemoCountButtons />
-                  )}
+                  <DemoTimingButtons iconSet={variant.iconSet ?? "new-icons"} />
 
                   <div className="mt-auto grid w-full grid-cols-[1fr_auto] items-center gap-1 pt-2 min-h-7">
                     <div className="justify-self-center text-xs text-gray-600 underline underline-offset-2">

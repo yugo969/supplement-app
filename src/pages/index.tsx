@@ -42,7 +42,7 @@ const SYSTEM_GROUPS: SupplementGroup[] = [
 const UNGROUPED_GROUP_ID = "ungrouped";
 
 type HomeProps = {
-  comparisonScope?: "all" | "a" | "b" | "c";
+  comparisonScope?: "all" | "a" | "b";
   showComparisonSection?: boolean;
   cardVariant?: "default" | "a";
 };
