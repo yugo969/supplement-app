@@ -45,7 +45,43 @@ jobs:
       - name: Build application
         run: npm run build
 
+      - name: Check required E2E credentials
+        id: env-check
+        run: |
+          missing=()
+          for key in \
+            NEXT_PUBLIC_FIREBASE_API_KEY \
+            NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN \
+            NEXT_PUBLIC_FIREBASE_PROJECT_ID \
+            NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET \
+            NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID \
+            NEXT_PUBLIC_FIREBASE_APP_ID \
+            E2E_TEST_EMAIL \
+            E2E_TEST_PASSWORD
+          do
+            if [ -z "${!key}" ]; then
+              missing+=("$key")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "missing_keys=$(IFS=,; echo "${missing[*]}")" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY || vars.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN || vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID || vars.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET || vars.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID || vars.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID || vars.FIREBASE_APP_ID }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL || vars.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD || vars.E2E_TEST_PASSWORD }}
+
       - name: Run critical E2E tests (serialized)
+        if: steps.env-check.outputs.ready == 'true'
         run: npx playwright test tests/e2e/auth tests/e2e/supplements tests/e2e/regression/dosage-tracking.spec.ts --project=chromium --workers=1 --retries=1
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY || vars.FIREBASE_API_KEY }}
@@ -72,5 +108,10 @@ jobs:
         run: |
           echo "# E2E Critical Tests Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Trigger: auth/e2e related file changes on PR" >> $GITHUB_STEP_SUMMARY
-          echo "- Scope: auth + supplements + dosage-tracking (chromium, workers=1)" >> $GITHUB_STEP_SUMMARY
-          echo "- Result: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.env-check.outputs.ready }}" = "true" ]; then
+            echo "- Scope: auth + supplements + dosage-tracking (chromium, workers=1)" >> $GITHUB_STEP_SUMMARY
+            echo "- Result: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Result: skipped (missing required secrets/vars)" >> $GITHUB_STEP_SUMMARY
+            echo "- Missing: ${{ steps.env-check.outputs.missing_keys }}" >> $GITHUB_STEP_SUMMARY
+          fi
