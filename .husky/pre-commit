@@ -35,9 +35,33 @@ elif ! check_if_e2e_needed; then
     echo "🔄 .cursorサブモジュールのみの変更のため、E2Eテストを自動スキップ"
 else
     echo "🧪 重要機能E2Eテスト実行中..."
-    # 安定したテストのみ実行（認証 + 服用記録回帰のみ）
-    npx playwright test tests/e2e/auth tests/e2e/regression/dosage-tracking.spec.ts --project=chromium || {
+    # pre-commitは外部認証の成否に依存しないsmokeのみ実行する。
+    # 認証成功/服用記録の重い回帰はCIまたは手動実行に委譲する。
+    run_smoke() {
+      target_port="$1"
+      echo "🔎 pre-commit smoke (E2E_PORT=$target_port)"
+      E2E_PORT="$target_port" npx playwright test \
+        tests/e2e/smoke/precommit-smoke.spec.ts \
+        --project=chromium \
+        --workers=1 \
+        --retries=0
+    }
+
+    smoke_ok=0
+    if [ -n "$E2E_PORT" ]; then
+      run_smoke "$E2E_PORT" && smoke_ok=1
+    else
+      for port in 3001 3002 3000; do
+        if run_smoke "$port"; then
+          smoke_ok=1
+          break
+        fi
+      done
+    fi
+
+    [ "$smoke_ok" -eq 1 ] || {
         echo "❌ E2Eテストが失敗しました"
+        echo "💡 実行済みポート: ${E2E_PORT:-3001,3002,3000}"
         echo "💡 緊急時は以下のコマンドでスキップできます:"
         echo "   SKIP_E2E=1 git commit -m \"緊急修正\""
         exit 1

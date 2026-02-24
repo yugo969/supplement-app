@@ -1,4 +1,5 @@
 import { test, expect, devices } from "@playwright/test";
+import { E2E_EMAIL, E2E_PASSWORD } from "../utils/auth-credentials";
 
 /**
  * Phase 4.1: ユーザビリティテスト
@@ -17,12 +18,8 @@ test.describe("Phase 4.1: ユーザビリティテスト", () => {
     await page.goto("/");
     await expect(page).toHaveURL(/.*login/);
 
-    await page
-      .getByRole("textbox", { name: "Email:" })
-      .fill("test-e2e@example.com");
-    await page
-      .getByRole("textbox", { name: "Password:" })
-      .fill("TestPassword123!");
+    await page.getByRole("textbox", { name: "Email:" }).fill(E2E_EMAIL);
+    await page.getByRole("textbox", { name: "Password:" }).fill(E2E_PASSWORD);
     await page.getByRole("button", { name: "ログイン" }).click();
 
     await expect(page).toHaveURL(/.*\/$/);

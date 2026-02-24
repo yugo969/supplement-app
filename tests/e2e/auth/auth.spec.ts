@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { E2E_EMAIL, E2E_PASSWORD } from "../utils/auth-credentials";
 
 /**
  * 認証機能 E2Eテスト
@@ -27,7 +28,7 @@ test.describe("認証機能", () => {
 
       // テスト用のユニークなメールアドレスを生成
       const testEmail = `test-${Date.now()}@example.com`;
-      const testPassword = "TestPassword123!";
+      const testPassword = E2E_PASSWORD;
 
       // フォーム入力
       await page
@@ -72,7 +73,7 @@ test.describe("認証機能", () => {
         .fill("invalid-email");
       await page
         .getByRole("textbox", { name: "パスワード:" })
-        .fill("TestPassword123!");
+        .fill(E2E_PASSWORD);
 
       // フォーム送信
       await page.getByRole("button", { name: "アカウントを作成" }).click();
@@ -98,12 +99,8 @@ test.describe("認証機能", () => {
       ).toBeVisible();
 
       // 認証情報入力（実際のテストアカウント使用）
-      await page
-        .getByRole("textbox", { name: "Email:" })
-        .fill("test-e2e@example.com");
-      await page
-        .getByRole("textbox", { name: "Password:" })
-        .fill("TestPassword123!");
+      await page.getByRole("textbox", { name: "Email:" }).fill(E2E_EMAIL);
+      await page.getByRole("textbox", { name: "Password:" }).fill(E2E_PASSWORD);
 
       // ログインボタンクリック
       await page.getByRole("button", { name: "ログイン" }).click();
@@ -143,12 +140,8 @@ test.describe("認証機能", () => {
       // まず有効な認証情報でログイン
       await expect(page).toHaveURL(/.*login/);
 
-      await page
-        .getByRole("textbox", { name: "Email:" })
-        .fill("test-e2e@example.com");
-      await page
-        .getByRole("textbox", { name: "Password:" })
-        .fill("TestPassword123!");
+      await page.getByRole("textbox", { name: "Email:" }).fill(E2E_EMAIL);
+      await page.getByRole("textbox", { name: "Password:" }).fill(E2E_PASSWORD);
       await page.getByRole("button", { name: "ログイン" }).click();
 
       // ログイン成功を確認

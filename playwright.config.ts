@@ -1,4 +1,99 @@
 import { defineConfig, devices } from "@playwright/test";
+import { spawnSync } from "node:child_process";
+
+const candidatePorts = (process.env.E2E_PORT_CANDIDATES ?? "3000,3001,3002")
+  .split(",")
+  .map((port) => port.trim())
+  .filter(Boolean);
+
+const isServerHealthy = (port: string): boolean => {
+  const result = spawnSync(
+    "curl",
+    ["-sf", "--max-time", "2", `http://localhost:${port}/login`],
+    { stdio: "ignore" }
+  );
+  return result.status === 0;
+};
+
+const isPortInUse = (port: string): boolean => {
+  const script = `
+import socket
+import sys
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+try:
+    sock.bind(("127.0.0.1", int(sys.argv[1])))
+    sock.close()
+    sys.exit(1)
+except OSError:
+    sock.close()
+    sys.exit(0)
+  `;
+  const result = spawnSync("python3", ["-c", script, port], {
+    stdio: "ignore",
+  });
+  return result.status === 0;
+};
+
+const pickFirstFreePort = (ports: string[]): string | null => {
+  const script = `
+import socket
+import sys
+
+for port in sys.argv[1:]:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(("127.0.0.1", int(port)))
+        sock.close()
+        print(port, end="")
+        break
+    except OSError:
+        sock.close()
+  `;
+
+  const result = spawnSync("python3", ["-c", script, ...ports], {
+    encoding: "utf8",
+  });
+  const port = (result.stdout ?? "").trim();
+  return port.length > 0 ? port : null;
+};
+
+const pickPort = (): string => {
+  if (process.env.E2E_PORT) {
+    return process.env.E2E_PORT;
+  }
+
+  for (const port of candidatePorts) {
+    if (isServerHealthy(port)) {
+      return port;
+    }
+  }
+
+  for (const port of candidatePorts) {
+    if (isPortInUse(port)) {
+      return port;
+    }
+  }
+
+  const candidateFree = pickFirstFreePort(candidatePorts);
+  if (candidateFree) {
+    return candidateFree;
+  }
+
+  const extendedPorts = Array.from({ length: 1000 }, (_, index) =>
+    String(3000 + index)
+  );
+  const extendedFree = pickFirstFreePort(extendedPorts);
+  if (extendedFree) {
+    return extendedFree;
+  }
+
+  return candidatePorts[0] ?? "3000";
+};
+
+const e2ePort = pickPort();
+const e2eBaseUrl =
+  process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${e2ePort}`;
 
 /**
  * Playwright E2E テスト設定
@@ -7,6 +102,7 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   // テストディレクトリ
   testDir: "./tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
 
   // 並列実行設定
   fullyParallel: true,
@@ -30,7 +126,7 @@ export default defineConfig({
   // 全テスト共通設定
   use: {
     // ベースURL（開発サーバー）
-    baseURL: "http://localhost:3100",
+    baseURL: e2eBaseUrl,
 
     // スクリーンショット設定
     screenshot: "only-on-failure",
@@ -80,8 +176,8 @@ export default defineConfig({
 
   // 開発サーバー設定
   webServer: {
-    command: "PORT=3100 npm run dev",
-    url: "http://localhost:3100",
+    command: `npx next dev -p ${e2ePort}`,
+    url: e2eBaseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },
