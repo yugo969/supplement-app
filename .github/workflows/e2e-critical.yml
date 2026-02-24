@@ -1,0 +1,76 @@
+name: E2E Critical Tests (Auth-Related Changes)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "src/pages/login.tsx"
+      - "src/pages/signup.tsx"
+      - "src/hooks/useAuth.ts"
+      - "src/context/AuthContext.tsx"
+      - "src/lib/firebaseClient.ts"
+      - "src/schemas/auth.ts"
+      - "tests/e2e/auth/**"
+      - "tests/e2e/supplements/**"
+      - "tests/e2e/regression/dosage-tracking.spec.ts"
+      - "playwright.config.ts"
+      - ".github/workflows/e2e-critical.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-critical-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-critical:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright (Chromium only)
+        run: npx playwright install --with-deps chromium
+
+      - name: Build application
+        run: npm run build
+
+      - name: Run critical E2E tests (serialized)
+        run: npx playwright test tests/e2e/auth tests/e2e/supplements tests/e2e/regression/dosage-tracking.spec.ts --project=chromium --workers=1 --retries=1
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY || vars.FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.FIREBASE_AUTH_DOMAIN || vars.FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID || vars.FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET || vars.FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID || vars.FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID || vars.FIREBASE_APP_ID }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL || vars.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD || vars.E2E_TEST_PASSWORD }}
+
+      - name: Upload test results (only on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-critical-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "# E2E Critical Tests Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Trigger: auth/e2e related file changes on PR" >> $GITHUB_STEP_SUMMARY
+          echo "- Scope: auth + supplements + dosage-tracking (chromium, workers=1)" >> $GITHUB_STEP_SUMMARY
+          echo "- Result: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
