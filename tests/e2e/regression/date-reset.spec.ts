@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { E2E_EMAIL, E2E_PASSWORD } from "../utils/auth-credentials";
 
 /**
  * Phase 3.2: 日付変更時リセット機能の回帰テスト
@@ -34,8 +35,8 @@ test.describe("日付変更時リセット機能テスト", () => {
     await expect(loginButton).toBeEnabled();
 
     // ログイン情報を入力
-    await emailInput.fill("test-e2e@example.com");
-    await passwordInput.fill("TestPassword123!");
+    await emailInput.fill(E2E_EMAIL);
+    await passwordInput.fill(E2E_PASSWORD);
 
     // ログインボタンをクリック
     await loginButton.click();

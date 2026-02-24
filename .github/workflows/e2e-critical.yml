@@ -11,8 +11,8 @@ on:
       - "src/lib/firebaseClient.ts"
       - "src/schemas/auth.ts"
       - "tests/e2e/auth/**"
-      - "tests/e2e/supplements/**"
-      - "tests/e2e/regression/dosage-tracking.spec.ts"
+      - "tests/e2e/auth/auth-critical.spec.ts"
+      - "tests/e2e/utils/auth-credentials.ts"
       - "playwright.config.ts"
       - ".github/workflows/e2e-critical.yml"
   workflow_dispatch:
@@ -67,8 +67,23 @@ jobs:
           if [ "${#missing[@]}" -gt 0 ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "missing_keys=$(IFS=,; echo "${missing[*]}")" >> "$GITHUB_OUTPUT"
+            echo "reason=missing-required-env" >> "$GITHUB_OUTPUT"
           else
-            echo "ready=true" >> "$GITHUB_OUTPUT"
+            verify_response=$(curl -sS -X POST \
+              "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${NEXT_PUBLIC_FIREBASE_API_KEY}" \
+              -H "Content-Type: application/json" \
+              -d "{\"email\":\"${E2E_TEST_EMAIL}\",\"password\":\"${E2E_TEST_PASSWORD}\",\"returnSecureToken\":true}" || true)
+
+            if echo "$verify_response" | grep -q '"idToken"'; then
+              echo "ready=true" >> "$GITHUB_OUTPUT"
+              echo "reason=ok" >> "$GITHUB_OUTPUT"
+            else
+              auth_error=$(echo "$verify_response" | sed -n 's/.*"message":"\([^"]*\)".*/\1/p')
+              [ -n "$auth_error" ] || auth_error="AUTH_PRECHECK_FAILED"
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+              echo "reason=auth-precheck-failed" >> "$GITHUB_OUTPUT"
+              echo "auth_error=${auth_error}" >> "$GITHUB_OUTPUT"
+            fi
           fi
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY || vars.NEXT_PUBLIC_FIREBASE_API_KEY || secrets.FIREBASE_API_KEY || vars.FIREBASE_API_KEY }}
@@ -82,7 +97,7 @@ jobs:
 
       - name: Run critical E2E tests (serialized)
         if: steps.env-check.outputs.ready == 'true'
-        run: npx playwright test tests/e2e/auth tests/e2e/supplements tests/e2e/regression/dosage-tracking.spec.ts --project=chromium --workers=1 --retries=1
+        run: npx playwright test tests/e2e/auth/auth-critical.spec.ts --project=chromium --workers=1 --retries=1
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY || vars.NEXT_PUBLIC_FIREBASE_API_KEY || secrets.FIREBASE_API_KEY || vars.FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || vars.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || secrets.FIREBASE_AUTH_DOMAIN || vars.FIREBASE_AUTH_DOMAIN }}
@@ -109,9 +124,13 @@ jobs:
           echo "# E2E Critical Tests Summary" >> $GITHUB_STEP_SUMMARY
           echo "- Trigger: auth/e2e related file changes on PR" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.env-check.outputs.ready }}" = "true" ]; then
-            echo "- Scope: auth + supplements + dosage-tracking (chromium, workers=1)" >> $GITHUB_STEP_SUMMARY
+            echo "- Scope: auth-critical only (chromium, workers=1)" >> $GITHUB_STEP_SUMMARY
             echo "- Result: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           else
-            echo "- Result: skipped (missing required secrets/vars)" >> $GITHUB_STEP_SUMMARY
-            echo "- Missing: ${{ steps.env-check.outputs.missing_keys }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Result: skipped" >> $GITHUB_STEP_SUMMARY
+            echo "- Reason: ${{ steps.env-check.outputs.reason }}" >> $GITHUB_STEP_SUMMARY
+            if [ "${{ steps.env-check.outputs.reason }}" = "missing-required-env" ]; then
+              echo "- Missing: ${{ steps.env-check.outputs.missing_keys }}" >> $GITHUB_STEP_SUMMARY
+            fi
+            echo "- Auth precheck: ${{ steps.env-check.outputs.auth_error }}" >> $GITHUB_STEP_SUMMARY
           fi

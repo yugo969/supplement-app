@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { E2E_EMAIL, E2E_PASSWORD } from "../utils/auth-credentials";
 
 /**
  * サプリメント基本CRUD操作 E2Eテスト
@@ -12,12 +13,8 @@ test.describe("サプリメント基本CRUD操作", () => {
     await expect(page).toHaveURL(/.*login/);
 
     // 事前作成済みのテストアカウントでログイン
-    await page
-      .getByRole("textbox", { name: "Email:" })
-      .fill("test-e2e@example.com");
-    await page
-      .getByRole("textbox", { name: "Password:" })
-      .fill("TestPassword123!");
+    await page.getByRole("textbox", { name: "Email:" }).fill(E2E_EMAIL);
+    await page.getByRole("textbox", { name: "Password:" }).fill(E2E_PASSWORD);
     await page.getByRole("button", { name: "ログイン" }).click();
 
     // ログイン成功を確認
