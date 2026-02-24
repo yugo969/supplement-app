@@ -12,6 +12,7 @@ on:
       - "src/schemas/auth.ts"
       - "tests/e2e/auth/**"
       - "tests/e2e/auth/auth-critical.spec.ts"
+      - "tests/e2e/auth/auth-precheck.spec.ts"
       - "tests/e2e/utils/auth-credentials.ts"
       - "playwright.config.ts"
       - ".github/workflows/e2e-critical.yml"
@@ -69,20 +70,12 @@ jobs:
             echo "missing_keys=$(IFS=,; echo "${missing[*]}")" >> "$GITHUB_OUTPUT"
             echo "reason=missing-required-env" >> "$GITHUB_OUTPUT"
           else
-            verify_response=$(curl -sS -X POST \
-              "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${NEXT_PUBLIC_FIREBASE_API_KEY}" \
-              -H "Content-Type: application/json" \
-              -d "{\"email\":\"${E2E_TEST_EMAIL}\",\"password\":\"${E2E_TEST_PASSWORD}\",\"returnSecureToken\":true}" || true)
-
-            if echo "$verify_response" | grep -q '"idToken"'; then
+            if npx playwright test tests/e2e/auth/auth-precheck.spec.ts --project=chromium --workers=1 --retries=0; then
               echo "ready=true" >> "$GITHUB_OUTPUT"
               echo "reason=ok" >> "$GITHUB_OUTPUT"
             else
-              auth_error=$(echo "$verify_response" | sed -n 's/.*"message":"\([^"]*\)".*/\1/p')
-              [ -n "$auth_error" ] || auth_error="AUTH_PRECHECK_FAILED"
               echo "ready=false" >> "$GITHUB_OUTPUT"
-              echo "reason=auth-precheck-failed" >> "$GITHUB_OUTPUT"
-              echo "auth_error=${auth_error}" >> "$GITHUB_OUTPUT"
+              echo "reason=auth-ui-precheck-failed" >> "$GITHUB_OUTPUT"
             fi
           fi
         env:
@@ -132,5 +125,5 @@ jobs:
             if [ "${{ steps.env-check.outputs.reason }}" = "missing-required-env" ]; then
               echo "- Missing: ${{ steps.env-check.outputs.missing_keys }}" >> $GITHUB_STEP_SUMMARY
             fi
-            echo "- Auth precheck: ${{ steps.env-check.outputs.auth_error }}" >> $GITHUB_STEP_SUMMARY
+            echo "- Auth precheck: ${{ steps.env-check.outputs.reason }}" >> $GITHUB_STEP_SUMMARY
           fi
