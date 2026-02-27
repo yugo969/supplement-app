@@ -28,7 +28,7 @@
 - 同一セッション内の2ターン目以降は、関連ファイルの変更差分（追記・更新箇所）を優先確認し、必要時のみ全文再確認する。
 - ドキュメント更新前に、編集候補 `*.md` の先頭見出しと「概要/目的/対象/非対象」を確認し、ファイルの目的を判定してから編集する。
 - 目的が一致しないファイルへは追記しない。どこに書くべきか曖昧な場合は、編集前にユーザーへ確認する。
-- `agent-ops-commands.md` はユーザー実行コマンドのチートシート用途に限定し、実装運用ルールやブランチ戦略は記載しない。
+- `agent-ops-commands.md` はユーザー実行コマンドのチートシート用途に限定し、実装運用ルール・判断基準・作業ログは記載しない。
 
 ## 2. 変更前提ルール
 
@@ -40,11 +40,12 @@
 
 UI/UX・機能・運用に関わる変更を行ったら、同ターンで必ずドキュメントも更新する。
 
-- `.cursor/docs/uiux-improvement-log.md`
+- UI/UX変更時は `.cursor/docs/uiux-improvement-log.md` を更新
   - チェックリストを更新（完了は `[x]`）
   - ブレスト中で確定した項目はチェックリストへ移動
   - 実装済みが「未確定/ブレスト中」に残っていたら削除
   - 実装ログは必ず「新しいものを上、古いものを下」
+- 運用変更は対象ドキュメントへ更新（`branch-strategy.md` / `e2e-test-integration-checklist.md` / `devchain-cli-agent-collab-notes.md` / `agent-ops-commands.md`）
 - リファクタ関連の変更時は `.cursor/docs/refactoring-checklist.md` も更新
 - E2E/テスト基盤変更時は `.cursor/docs/e2e-test-integration-checklist.md` も更新
 - コード変更後は `.cursor/docs/project-overview.yaml` の更新要否を確認し、必要なら反映する
@@ -86,6 +87,7 @@ UI/UX・機能・運用に関わる変更を行ったら、同ターンで必ず
 - コミット前に最低限 `npm run type-check` を実行する。
 - 認証/E2E/CI workflow に変更を入れた場合は、push前に「CIで実行するコマンドと同等のローカル実行」を必須とする。少なくとも1ケースで認証成功（`/login` からホーム遷移）を確認できない状態では push しない。
 - CI失敗を修正する変更は、`失敗原因のログ確認 -> 同条件ローカル再現 -> 修正 -> 再実行成功確認` の順で進め、推測だけで workflow を先行変更しない。
+- テスト運用の MUST/SHOULD 区分、ならびに MUST 変更時の同期チェック運用は `.cursor/docs/e2e-test-integration-checklist.md` を正本として参照する。
 
 ## 8. 重複ドキュメント方針
 
