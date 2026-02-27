@@ -72,3 +72,4 @@ dist/
 # Local AI/tool artifacts
 .gemini/
 output/
+.devchain/
