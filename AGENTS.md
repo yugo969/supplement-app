@@ -18,7 +18,8 @@
 8. `.cursor/docs/netlify-deployment-guide.md`
 9. `.cursor/docs/cursor-submodule-management.md`
 10. `.cursor/docs/branch-strategy.md`
-11. `README.md`
+11. `.cursor/docs/browser-research-ops.md`
+12. `README.md`
 
 補足:
 
@@ -45,7 +46,7 @@ UI/UX・機能・運用に関わる変更を行ったら、同ターンで必ず
   - ブレスト中で確定した項目はチェックリストへ移動
   - 実装済みが「未確定/ブレスト中」に残っていたら削除
   - 実装ログは必ず「新しいものを上、古いものを下」
-- 運用変更は対象ドキュメントへ更新（`branch-strategy.md` / `e2e-test-integration-checklist.md` / `devchain-cli-agent-collab-notes.md` / `agent-ops-commands.md`）
+- 運用変更は対象ドキュメントへ更新（`branch-strategy.md` / `e2e-test-integration-checklist.md` / `devchain-cli-agent-collab-notes.md` / `browser-research-ops.md` / `agent-ops-commands.md`）
 - リファクタ関連の変更時は `.cursor/docs/refactoring-checklist.md` も更新
 - E2E/テスト基盤変更時は `.cursor/docs/e2e-test-integration-checklist.md` も更新
 - コード変更後は `.cursor/docs/project-overview.yaml` の更新要否を確認し、必要なら反映する
@@ -60,6 +61,7 @@ UI/UX・機能・運用に関わる変更を行ったら、同ターンで必ず
 - 設定系は `src/lib/firebaseClient.ts` 一元管理方針を守る。
 - データ構造/権限モデル変更時は、`firestore.rules` とアプリ実装の整合を必ず確認する。
 - Firebaseの権限はサーバールールに加えて、クライアント側でも対象データ所有チェックを行う。
+- ブラウザ調査ツール（Web検索 / agent-browser / chrome-devtools-mcp）の運用順序と判定基準は `.cursor/docs/browser-research-ops.md` を正本として参照する。
 
 ## 5. 実装後レビュー参照
 
