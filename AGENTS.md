@@ -61,6 +61,8 @@ UI/UX・機能・運用に関わる変更を行ったら、同ターンで必ず
 - 設定系は `src/lib/firebaseClient.ts` 一元管理方針を守る。
 - データ構造/権限モデル変更時は、`firestore.rules` とアプリ実装の整合を必ず確認する。
 - Firebaseの権限はサーバールールに加えて、クライアント側でも対象データ所有チェックを行う。
+- MCP併用時は役割を固定する（探索=`reactbits`、導入=`shadcn`）。`reactbits_dev` にリネームした場合も同じ役割で扱う。
+- MCP利用方針をユーザーが明示したターンでは、その方針を優先し、未使用側MCPの自動提案はしない。
 - ブラウザ調査ツール（Web検索 / agent-browser / chrome-devtools-mcp）の運用順序と判定基準は `.cursor/docs/browser-research-ops.md` を正本として参照する。
 
 ## 5. 実装後レビュー参照
