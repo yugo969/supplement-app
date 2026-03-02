@@ -73,3 +73,5 @@ dist/
 .gemini/
 output/
 .devchain/
+# local patch backups
+patches/*.patch
